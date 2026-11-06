@@ -35,7 +35,10 @@ def main():
             if path.is_file():
                 archive.write(path, path.relative_to(ROOT))
         archive.write(ROOT / "build/assets/build-info.json", "build-info.json")
-    assets = (standalone, portable, documents)
+    installer = output / f"{prefix}-setup.exe"
+    if not installer.is_file():
+        raise RuntimeError("Build the Windows installer before packaging a release.")
+    assets = (standalone, portable, documents, installer)
     checksums = []
     for path in assets:
         with path.open("rb") as source:

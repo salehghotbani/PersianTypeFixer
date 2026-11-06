@@ -1,0 +1,61 @@
+#ifndef AppVersion
+  #error AppVersion is required
+#endif
+
+[Setup]
+AppId={{4CD29712-8CCB-4E55-85E5-1D9295313A97}
+AppName=Persian Typo Fixer
+AppVersion={#AppVersion}
+AppMutex=Local\PersianTypoFixer.Singleton
+AppPublisher=Seyed Mohammad Saleh Ghotbani
+AppPublisherURL=https://github.com/salehghotbani/PersianTypeFixer
+DefaultDirName={localappdata}\Programs\PersianTypoFixer
+DefaultGroupName=Persian Typo Fixer
+PrivilegesRequired=lowest
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=10.0.17763
+OutputDir=..\dist\release
+OutputBaseFilename=PersianTypoFixer-v{#AppVersion}-windows-x64-setup
+SetupIconFile=..\build\assets\app.ico
+UninstallDisplayIcon={app}\PersianTypoFixer.exe
+LicenseFile=..\LICENSE
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+CloseApplications=yes
+RestartApplications=no
+
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "autostart"; Description: "Run Persian Typo Fixer when I sign in to Windows"; Flags: unchecked
+
+[Files]
+Source: "..\dist\PersianTypoFixer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+
+[Icons]
+Name: "{group}\Persian Typo Fixer"; Filename: "{app}\PersianTypoFixer.exe"
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PersianTypoFixer"; ValueData: """{app}\PersianTypoFixer.exe"""; Tasks: autostart; Flags: uninsdeletevalue
+
+[Run]
+Filename: "{app}\PersianTypoFixer.exe"; Description: "Run Persian Typo Fixer"; Flags: nowait postinstall skipifsilent
+
+[Code]
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssPostInstall) and not WizardIsTaskSelected('autostart') then
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'PersianTypoFixer');
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'PersianTypoFixer');
+end;

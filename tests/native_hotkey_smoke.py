@@ -40,7 +40,7 @@ def main():
             assert received == ["converted"], received
             assert not any(widget.isVisible() for widget in app.topLevelWidgets())
             assert [action.text() for action in controller.menu.actions()
-                    if not action.isSeparator()] == ["فعال", "خروج"]
+                    if not action.isSeparator()] == ["فعال", "اجرا هنگام ورود به ویندوز", "خروج"]
             controller.toggle_action.trigger()
             assert not controller.is_enabled and not controller.native.registered
             assert not controller.toggle_action.isChecked()

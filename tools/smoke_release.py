@@ -62,7 +62,7 @@ def main():
         digest, name = line.split("  ", 1)
         with (release / name).open("rb") as source:
             assert hashlib.file_digest(source, "sha256").hexdigest() == digest, name
-    staging = ROOT / "build/release-smoke"
+    staging = ROOT / "build/release-smoke" / VERSION
     single_directory = staging / "standalone"
     single_directory.mkdir(parents=True, exist_ok=True)
     standalone = single_directory / f"{prefix}.exe"

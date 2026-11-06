@@ -7,6 +7,8 @@ from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from app_version import VERSION
+from single_instance import SingleInstance
+from startup import StartupPreference
 from selection_conversion import QtClipboard, SelectionConverter
 from windows_api import HotkeyFilter, WindowsAPI
 
@@ -19,6 +21,7 @@ class TrayApplication(QObject):
         self.quitting = False
         self.cleaned_up = False
         self.last_status = ""
+        self.startup = StartupPreference()
         self.create_tray()
         self.converter = SelectionConverter(
             self.native, QtClipboard(QApplication.clipboard()), self
@@ -38,6 +41,12 @@ class TrayApplication(QObject):
         self.toggle_action.setCheckable(True)
         self.toggle_action.triggered.connect(self.toggle_enabled)
         self.menu.addAction(self.toggle_action)
+        self.startup_action = QAction("اجرا هنگام ورود به ویندوز", self)
+        self.startup_action.setCheckable(True)
+        self.startup_action.triggered.connect(self.toggle_startup)
+        self.menu.addAction(self.startup_action)
+        self.menu.aboutToShow.connect(self.refresh_startup)
+        self.refresh_startup()
         self.menu.addSeparator()
         self.menu.addAction("خروج", self.exit_application)
         self.tray.setContextMenu(self.menu)
@@ -81,6 +90,21 @@ class TrayApplication(QObject):
     def toggle_enabled(self):
         self.set_enabled(not self.is_enabled)
 
+    def refresh_startup(self):
+        try:
+            self.startup_action.setChecked(self.startup.is_enabled())
+        except OSError as error:
+            self.startup_action.setChecked(False)
+            self.show_status(f"خواندن تنظیم اجرای خودکار ممکن نشد: {error}")
+
+    def toggle_startup(self, enabled):
+        try:
+            self.startup.set_enabled(enabled)
+            self.show_status("اجرای خودکار فعال شد." if enabled else "اجرای خودکار غیرفعال شد.")
+        except OSError as error:
+            self.show_status(f"تنظیم اجرای خودکار ممکن نشد: {error}")
+        self.refresh_startup()
+
     def start_conversion(self):
         if self.is_enabled and not self.quitting:
             self.converter.start()
@@ -110,13 +134,20 @@ class TrayApplication(QObject):
 
 
 def main():
+    instance = SingleInstance()
+    if instance.already_running:
+        instance.close()
+        return 0
     app = QApplication(sys.argv)
     app.setApplicationName("Persian Typo Fixer")
     app.setApplicationVersion(VERSION)
     app.setQuitOnLastWindowClosed(False)
     controller = TrayApplication()
     controller.tray.show()
-    return app.exec()
+    try:
+        return app.exec()
+    finally:
+        instance.close()
 
 
 if __name__ == "__main__":

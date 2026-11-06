@@ -19,6 +19,8 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 "%APP_PYTHON%" -m PyInstaller --noconfirm --clean PersianTypoFixer.spec
 if errorlevel 1 exit /b 1
+"%APP_PYTHON%" tools\build_installer.py
+if errorlevel 1 exit /b 1
 "%APP_PYTHON%" tools\package_release.py
 if errorlevel 1 exit /b 1
 

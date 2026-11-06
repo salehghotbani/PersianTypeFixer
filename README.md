@@ -12,16 +12,17 @@
 
 ## دریافت نسخه آماده
 
-**[دانلود EXE مستقل نسخه 1.0.0 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.0.0/PersianTypoFixer-v1.0.0-windows-x64.exe)**
+**[دانلود نصاب نسخه 1.1.0 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.1.0/PersianTypoFixer-v1.1.0-windows-x64-setup.exe)**
 
 [صفحه آخرین انتشار](https://github.com/salehghotbani/PersianTypeFixer/releases/latest)
 شامل این فایل‌هاست:
 
 | فایل | کاربرد |
 | --- | --- |
-| `PersianTypoFixer-v1.0.0-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
-| `PersianTypoFixer-v1.0.0-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
-| `PersianTypoFixer-v1.0.0-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
+| `PersianTypoFixer-v1.1.0-windows-x64-setup.exe` | نصب برای کاربر جاری، میان‌بر Start Menu و حذف‌کننده؛ مناسب اجرای خودکار. |
+| `PersianTypoFixer-v1.1.0-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
+| `PersianTypoFixer-v1.1.0-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
+| `PersianTypoFixer-v1.1.0-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
 | `SHA256SUMS.txt` | هش SHA-256 فایل‌ها برای بررسی یکسان بودن دانلود. |
 
 فقط یکی از دو نسخه EXE مستقل یا پوشه‌ای را اجرا کنید. نسخه مستقل در هر اجرا
@@ -36,9 +37,10 @@
 2. در برنامه مقصد، فقط متن اشتباه را در یک کادر قابل ویرایش انتخاب کنید.
 3. **Ctrl+Alt+X** را بزنید و کلیدها را رها کنید. متن در همان محل جایگزین می‌شود.
 
-روی آیکون راست‌کلیک کنید. منو فقط دو گزینه دارد:
+روی آیکون راست‌کلیک کنید. منو این گزینه‌ها را دارد:
 
 - **فعال**: با برداشتن یا گذاشتن تیک، میان‌بر غیرفعال یا فعال می‌شود.
+- **اجرا هنگام ورود به ویندوز**: اجرای خودکار را با تیک فعال یا غیرفعال کنید. این انتخاب در نصاب هم وجود دارد و پیش‌فرض نصب جدید خاموش است.
 - **خروج**: برنامه کاملاً بسته و میان‌بر آزاد می‌شود.
 
 آیکون در حالت فعال آبی و در حالت غیرفعال خاکستری است. با نگه داشتن ماوس روی
@@ -93,6 +95,8 @@ py -3.11 -m venv .venv
 
 ## تست و ساخت نسخه اجرایی
 
+برای ساخت نصاب، Inno Setup 6.7.4 یا جدیدتر را نصب کنید یا متغیر `ISCC` را به مسیر کامل `ISCC.exe` تنظیم کنید.
+
 پیش از ساخت، از نسخه در حال اجرای برنامه با گزینه «خروج» خارج شوید تا فایل
 اجرایی قبلی توسط ویندوز قفل نباشد.
 
@@ -124,9 +128,10 @@ py -3.11 -m venv .venv
 
 ```text
 dist\release\
-  PersianTypoFixer-v1.0.0-windows-x64.exe
-  PersianTypoFixer-v1.0.0-windows-x64-portable.zip
-  PersianTypoFixer-v1.0.0-windows-x64-notices.zip
+  PersianTypoFixer-v1.1.0-windows-x64-setup.exe
+  PersianTypoFixer-v1.1.0-windows-x64.exe
+  PersianTypoFixer-v1.1.0-windows-x64-portable.zip
+  PersianTypoFixer-v1.1.0-windows-x64-notices.zip
   SHA256SUMS.txt
 ```
 
@@ -137,7 +142,7 @@ dist\release\
 برای بررسی هش فایل دانلودشده در PowerShell:
 
 ```powershell
-Get-FileHash .\PersianTypoFixer-v1.0.0-windows-x64.exe -Algorithm SHA256
+Get-FileHash .\PersianTypoFixer-v1.1.0-windows-x64.exe -Algorithm SHA256
 ```
 
 خروجی را با `SHA256SUMS.txt` همان انتشار مقایسه کنید. GitHub Actions نیز روی
@@ -164,3 +169,5 @@ Get-FileHash .\PersianTypoFixer-v1.0.0-windows-x64.exe -Algorithm SHA256
 برای جایگزینی کتابخانه‌ها نیز ارائه شده‌اند.
 
 برای گزارش مشکل یا مشارکت، [راهنمای مشارکت](CONTRIBUTING.md) را ببینید.
+
+نصب در `%LOCALAPPDATA%\Programs\PersianTypoFixer` انجام می‌شود. تنظیم اجرای خودکار فقط برای کاربر جاری است و با حذف نصب پاک می‌شود. نسخه portable را پس از فعال کردن اجرای خودکار جابه‌جا نکنید؛ اگر مسیر تغییر کرد، گزینه را خاموش و دوباره روشن کنید.
