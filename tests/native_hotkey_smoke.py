@@ -1,6 +1,6 @@
 """Run explicitly on Windows, outside restricted desktops/sandboxes.
 
-Uses a hidden Qt window and posts WM_HOTKEY to this process only. It never
+Runs the tray controller and posts WM_HOTKEY to this process only. It never
 copies user text or sends keys to another application.
 """
 
@@ -16,17 +16,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
-from main import MainWindow
+from main import TrayApplication
 from windows_api import HOTKEY_ID, WM_HOTKEY
 
 
 def main():
     app = QApplication([])
-    window = MainWindow()
-    if not window.is_enabled:
-        raise RuntimeError(window.status_label.text())
+    controller = TrayApplication()
+    if not controller.is_enabled:
+        raise RuntimeError(controller.last_status)
     received = []
-    window.converter.start = lambda: received.append("converted")
+    controller.converter.start = lambda: received.append("converted")
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     kernel.GetCurrentThreadId.restype = w.DWORD
     thread = kernel.GetCurrentThreadId()
@@ -38,26 +38,38 @@ def main():
     def check():
         try:
             assert received == ["converted"], received
-            window.set_enabled(False)
-            assert not window.is_enabled and not window.native.registered
-            window.start_conversion()
+            assert not any(widget.isVisible() for widget in app.topLevelWidgets())
+            assert [action.text() for action in controller.menu.actions()
+                    if not action.isSeparator()] == ["فعال", "خروج"]
+            controller.toggle_action.trigger()
+            assert not controller.is_enabled and not controller.native.registered
+            assert not controller.toggle_action.isChecked()
+            controller.start_conversion()
             assert received == ["converted"], received
-            window.set_enabled(True)
-            assert window.is_enabled and window.native.registered
+            controller.toggle_action.trigger()
+            assert controller.is_enabled and controller.native.registered
+            assert controller.toggle_action.isChecked()
         except Exception as error:
             errors.append(error)
-        finally:
             app.quit()
+        else:
+            controller.menu.actions()[-1].trigger()
+
+    def timed_out():
+        errors.append(TimeoutError("The tray Exit action did not stop the application"))
+        app.quit()
 
     if not api.PostThreadMessageW(thread, WM_HOTKEY, HOTKEY_ID, 0):
-        window.cleanup()
+        controller.cleanup()
         raise ctypes.WinError(ctypes.get_last_error())
     QTimer.singleShot(250, check)
+    QTimer.singleShot(2000, timed_out)
     app.exec()
-    assert not window.native.registered
+    assert controller.quitting
+    assert not controller.native.registered
     if errors:
         raise errors[0]
-    print("Native WM_HOTKEY dispatch, disable, enable, and cleanup passed")
+    print("Tray-only startup, native hotkey, menu toggle, and cleanup passed")
 
 
 if __name__ == "__main__":

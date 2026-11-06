@@ -2,99 +2,52 @@
 
 import sys
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import (
-    QApplication, QLabel, QMainWindow, QMenu, QPushButton,
-    QSystemTrayIcon, QVBoxLayout, QWidget,
-)
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from selection_conversion import QtClipboard, SelectionConverter
 from windows_api import HotkeyFilter, WindowsAPI
 
 
-class MainWindow(QMainWindow):
+class TrayApplication(QObject):
     def __init__(self, native=None):
         super().__init__()
         self.native = WindowsAPI() if native is None else native
         self.is_enabled = False
         self.quitting = False
-        self.setWindowTitle("Persian Typo Fixer")
-        self.setMinimumSize(460, 330)
-        self.setLayoutDirection(Qt.RightToLeft)
-        self.create_interface()
+        self.cleaned_up = False
+        self.last_status = ""
         self.create_tray()
         self.converter = SelectionConverter(
             self.native, QtClipboard(QApplication.clipboard()), self
         )
-        self.converter.status_changed.connect(self.status_label.setText)
+        self.converter.status_changed.connect(self.show_status)
         self.converter.finished.connect(self.conversion_finished)
         self.hotkey_filter = HotkeyFilter(self.start_conversion)
         QApplication.instance().installNativeEventFilter(self.hotkey_filter)
         QApplication.instance().aboutToQuit.connect(self.cleanup)
         self.set_enabled(True)
 
-    def create_interface(self):
-        central = QWidget()
-        layout = QVBoxLayout(central)
-        layout.setContentsMargins(24, 24, 24, 24)
-        layout.setSpacing(16)
-        title = QLabel("اصلاح تایپ فارسی و انگلیسی")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 22px; font-weight: bold;")
-        description = QLabel(
-            "۱. متن اشتباه را در برنامه مقصد انتخاب کنید.\n"
-            "۲. کلیدهای Ctrl+Alt+X را بزنید و رها کنید.\n"
-            "متن در همان محل به چیدمان درست تبدیل می‌شود."
-        )
-        description.setAlignment(Qt.AlignCenter)
-        description.setWordWrap(True)
-        example = QLabel("sghl  ↔  سلام")
-        example.setLayoutDirection(Qt.LeftToRight)
-        example.setAlignment(Qt.AlignCenter)
-        example.setStyleSheet("font-size: 20px;")
-        self.toggle_button = QPushButton()
-        self.toggle_button.setMinimumHeight(42)
-        self.toggle_button.clicked.connect(self.toggle_enabled)
-        self.hide_button = QPushButton("ادامه در پس‌زمینه")
-        self.hide_button.setMinimumHeight(42)
-        self.hide_button.clicked.connect(self.hide)
-        self.status_label = QLabel()
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setWordWrap(True)
-        for widget in (title, description, example, self.toggle_button,
-                       self.hide_button, self.status_label):
-            layout.addWidget(widget)
-        self.setCentralWidget(central)
-
     def create_tray(self):
         self.tray = QSystemTrayIcon(self)
-        icon = self.create_app_icon()
-        self.setWindowIcon(icon)
-        self.tray.setIcon(icon)
-        menu = QMenu(self)
-        show_action = menu.addAction("نمایش برنامه")
-        show_action.triggered.connect(self.show_window)
-        self.toggle_action = QAction("میان‌بر فعال باشد", self)
+        self.menu = QMenu()
+        self.menu.setLayoutDirection(Qt.RightToLeft)
+        self.toggle_action = QAction("فعال", self)
         self.toggle_action.setCheckable(True)
         self.toggle_action.triggered.connect(self.toggle_enabled)
-        menu.addAction(self.toggle_action)
-        menu.addSeparator()
-        menu.addAction("خروج", self.exit_application)
-        self.tray.setContextMenu(menu)
-        self.tray.activated.connect(self.tray_activated)
-        tray_available = QSystemTrayIcon.isSystemTrayAvailable()
-        self.hide_button.setEnabled(tray_available)
-        if tray_available:
-            self.tray.show()
+        self.menu.addAction(self.toggle_action)
+        self.menu.addSeparator()
+        self.menu.addAction("خروج", self.exit_application)
+        self.tray.setContextMenu(self.menu)
 
     @staticmethod
-    def create_app_icon():
+    def create_app_icon(enabled):
         pixmap = QPixmap(64, 64)
         pixmap.fill(Qt.transparent)
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QColor("#2563EB"))
+        painter.setBrush(QColor("#2563EB" if enabled else "#6B7280"))
         painter.setPen(Qt.NoPen)
         painter.drawRoundedRect(2, 2, 60, 60, 14, 14)
         painter.setPen(QColor("white"))
@@ -102,10 +55,6 @@ class MainWindow(QMainWindow):
         painter.drawText(pixmap.rect(), Qt.AlignCenter, "ف")
         painter.end()
         return QIcon(pixmap)
-
-    def tray_activated(self, reason):
-        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
-            self.show_window()
 
     def set_enabled(self, enabled):
         try:
@@ -120,9 +69,13 @@ class MainWindow(QMainWindow):
             self.is_enabled = self.native.registered
             message = f"خطای میان‌بر: {error}\nممکن است برنامه دیگری Ctrl+Alt+X را گرفته باشد."
         self.toggle_action.setChecked(self.is_enabled)
-        self.toggle_button.setText("غیرفعال کردن میان‌بر" if self.is_enabled else "فعال کردن میان‌بر")
-        self.status_label.setText(message)
-        self.tray.setToolTip("Persian Typo Fixer — " + ("فعال" if self.is_enabled else "غیرفعال"))
+        self.tray.setIcon(self.create_app_icon(self.is_enabled))
+        self.show_status(message)
+
+    def show_status(self, message):
+        self.last_status = message
+        state = "فعال — Ctrl+Alt+X" if self.is_enabled else "غیرفعال"
+        self.tray.setToolTip(f"Persian Typo Fixer\n{state}\n{message}")
 
     def toggle_enabled(self):
         self.set_enabled(not self.is_enabled)
@@ -130,19 +83,6 @@ class MainWindow(QMainWindow):
     def start_conversion(self):
         if self.is_enabled and not self.quitting:
             self.converter.start()
-
-    def show_window(self):
-        self.showNormal()
-        self.raise_()
-        self.activateWindow()
-
-    def closeEvent(self, event):
-        if self.tray.isVisible() and not self.quitting:
-            self.hide()
-            event.ignore()
-        else:
-            event.accept()
-            self.exit_application()
 
     def exit_application(self):
         self.quitting = True
@@ -156,6 +96,9 @@ class MainWindow(QMainWindow):
             QApplication.quit()
 
     def cleanup(self):
+        if self.cleaned_up:
+            return
+        self.cleaned_up = True
         self.converter.cancel(force=True)
         try:
             self.native.unregister_hotkey()
@@ -169,9 +112,8 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Persian Typo Fixer")
     app.setQuitOnLastWindowClosed(False)
-    window = MainWindow()
-    if "--background" not in sys.argv or not window.is_enabled or not window.tray.isVisible():
-        window.show()
+    controller = TrayApplication()
+    controller.tray.show()
     return app.exec()
 
 
