@@ -1,0 +1,36 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11.9"
+          architecture: x64
+      - name: Test and build Windows release files
+        shell: cmd
+        run: build.bat
+      - uses: actions/upload-artifact@v7.0.2
+        with:
+          name: PersianTypoFixer-windows-x64
+          path: dist/release/*
+          if-no-files-found: error
+          retention-days: 14

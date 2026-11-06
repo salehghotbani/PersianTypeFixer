@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Qt
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
+from app_version import VERSION
 from selection_conversion import QtClipboard, SelectionConverter
 from windows_api import HotkeyFilter, WindowsAPI
 
@@ -111,6 +112,7 @@ class TrayApplication(QObject):
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Persian Typo Fixer")
+    app.setApplicationVersion(VERSION)
     app.setQuitOnLastWindowClosed(False)
     controller = TrayApplication()
     controller.tray.show()
