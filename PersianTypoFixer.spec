@@ -1,5 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+from pathlib import Path
+
+
+# Prefer Windows system DLLs over unrelated tools on PATH. In particular,
+# Poppler/Conda can supply an incompatible icuuc.dll that breaks QtCore at
+# startup. PyInstaller recognizes System32 DLLs and leaves them to Windows.
+system_directory = Path(os.environ['SystemRoot']) / 'System32'
+os.environ['PATH'] = str(system_directory) + os.pathsep + os.environ.get('PATH', '')
+
 
 a = Analysis(
     ['main.py'],

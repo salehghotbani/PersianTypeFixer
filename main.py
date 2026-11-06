@@ -1,406 +1,135 @@
+"""Windows tray application for correcting a selection with Ctrl+Alt+X."""
+
 import sys
-import time
-import uuid
 
-import keyboard
-import pyperclip
-
-from PySide6.QtCore import Qt, QTimer, Signal, QObject
-from PySide6.QtGui import QAction, QIcon, QPixmap, QPainter, QColor, QFont
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QVBoxLayout,
-    QLabel,
-    QPushButton,
-    QSystemTrayIcon,
-    QMenu,
+    QApplication, QLabel, QMainWindow, QMenu, QPushButton,
+    QSystemTrayIcon, QVBoxLayout, QWidget,
 )
 
+from selection_conversion import QtClipboard, SelectionConverter
+from windows_api import HotkeyFilter, WindowsAPI
 
-# =========================================================
-# Keyboard layout mappings
-# =========================================================
-
-EN_TO_FA = {
-    "q": "ض", "w": "ص", "e": "ث", "r": "ق",
-    "t": "ف", "y": "غ", "u": "ع", "i": "ه",
-    "o": "خ", "p": "ح", "[": "ج", "]": "چ",
-
-    "a": "ش", "s": "س", "d": "ی", "f": "ب",
-    "g": "ل", "h": "ا", "j": "ت", "k": "ن",
-    "l": "م", ";": "ک", "'": "گ",
-
-    "z": "ظ", "x": "ط", "c": "ز", "v": "ر",
-    "b": "ذ", "n": "د", "m": "ئ",
-    ",": "و", ".": ".", "/": "/",
-}
-
-FA_TO_EN = {
-    value: key for key, value in EN_TO_FA.items()
-}
-
-# Support Arabic variants commonly found in copied text.
-FA_TO_EN["ي"] = "d"
-FA_TO_EN["ك"] = ";"
-
-def convert_text(text: str) -> str:
-    """
-    Automatically choose conversion direction based on
-    the first recognized character in the selection.
-    """
-    for char in text:
-        if char in EN_TO_FA:
-            return "".join(EN_TO_FA.get(c, c) for c in text)
-
-        if char in FA_TO_EN:
-            return "".join(FA_TO_EN.get(c, c) for c in text)
-
-    return text
-
-
-# =========================================================
-# Thread-safe hotkey signal
-# =========================================================
-
-class AppSignals(QObject):
-    hotkey_pressed = Signal()
-
-
-# =========================================================
-# Main application
-# =========================================================
 
 class MainWindow(QMainWindow):
-
-    def __init__(self):
+    def __init__(self, native=None):
         super().__init__()
-
+        self.native = WindowsAPI() if native is None else native
+        self.is_enabled = False
+        self.quitting = False
         self.setWindowTitle("Persian Typo Fixer")
-        self.setMinimumSize(420, 300)
-
-        self.is_enabled = True
-        self.hotkey_registered = False
-
-        self.clipboard_marker = None
-        self.old_clipboard = None
-        self.converted_clipboard = None
-        self.wait_count = 0
-
-        self.signals = AppSignals()
-        self.signals.hotkey_pressed.connect(
-            self.start_conversion
-        )
-
+        self.setMinimumSize(460, 330)
+        self.setLayoutDirection(Qt.RightToLeft)
         self.create_interface()
         self.create_tray()
+        self.converter = SelectionConverter(
+            self.native, QtClipboard(QApplication.clipboard()), self
+        )
+        self.converter.status_changed.connect(self.status_label.setText)
+        self.converter.finished.connect(self.conversion_finished)
+        self.hotkey_filter = HotkeyFilter(self.start_conversion)
+        QApplication.instance().installNativeEventFilter(self.hotkey_filter)
+        QApplication.instance().aboutToQuit.connect(self.cleanup)
         self.set_enabled(True)
-
-    # -----------------------------------------------------
-    # User interface
-    # -----------------------------------------------------
 
     def create_interface(self):
         central = QWidget()
         layout = QVBoxLayout(central)
-
         layout.setContentsMargins(24, 24, 24, 24)
         layout.setSpacing(16)
-
-        title = QLabel("اصلاح تایپ فارسی")
+        title = QLabel("اصلاح تایپ فارسی و انگلیسی")
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet(
-            "font-size: 24px; font-weight: bold;"
-        )
-
+        title.setStyleSheet("font-size: 22px; font-weight: bold;")
         description = QLabel(
-            "متن اشتباه را در هر برنامه انتخاب کنید "
-            "و کلید F10 را فشار دهید."
+            "۱. متن اشتباه را در برنامه مقصد انتخاب کنید.\n"
+            "۲. کلیدهای Ctrl+Alt+X را بزنید و رها کنید.\n"
+            "متن در همان محل به چیدمان درست تبدیل می‌شود."
         )
         description.setAlignment(Qt.AlignCenter)
         description.setWordWrap(True)
-
-        self.convert_button = QPushButton(
-            "اصلاح متن انتخاب‌شده (F10)"
-        )
-        self.convert_button.setMinimumHeight(48)
-        self.convert_button.clicked.connect(
-            self.start_conversion
-        )
-
+        example = QLabel("sghl  ↔  سلام")
+        example.setLayoutDirection(Qt.LeftToRight)
+        example.setAlignment(Qt.AlignCenter)
+        example.setStyleSheet("font-size: 20px;")
         self.toggle_button = QPushButton()
         self.toggle_button.setMinimumHeight(42)
-        self.toggle_button.clicked.connect(
-            self.toggle_enabled
-        )
-
+        self.toggle_button.clicked.connect(self.toggle_enabled)
+        self.hide_button = QPushButton("ادامه در پس‌زمینه")
+        self.hide_button.setMinimumHeight(42)
+        self.hide_button.clicked.connect(self.hide)
         self.status_label = QLabel()
         self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.setWordWrap(True)
-
-        layout.addWidget(title)
-        layout.addWidget(description)
-        layout.addWidget(self.convert_button)
-        layout.addWidget(self.toggle_button)
-        layout.addWidget(self.status_label)
-
+        for widget in (title, description, example, self.toggle_button,
+                       self.hide_button, self.status_label):
+            layout.addWidget(widget)
         self.setCentralWidget(central)
-
-    # -----------------------------------------------------
-    # System tray
-    # -----------------------------------------------------
 
     def create_tray(self):
         self.tray = QSystemTrayIcon(self)
-        self.tray.setIcon(self.create_app_icon())
-        self.tray.setToolTip("Persian Typo Fixer")
-
-        menu = QMenu()
-
-        self.show_action = QAction("نمایش برنامه", self)
-        self.show_action.triggered.connect(
-            self.show_window
-        )
-        menu.addAction(self.show_action)
-
-        self.toggle_action = QAction(
-            "اصلاح متن فعال باشد", self
-        )
+        icon = self.create_app_icon()
+        self.setWindowIcon(icon)
+        self.tray.setIcon(icon)
+        menu = QMenu(self)
+        show_action = menu.addAction("نمایش برنامه")
+        show_action.triggered.connect(self.show_window)
+        self.toggle_action = QAction("میان‌بر فعال باشد", self)
         self.toggle_action.setCheckable(True)
-        self.toggle_action.setChecked(True)
-        self.toggle_action.triggered.connect(
-            self.toggle_enabled
-        )
+        self.toggle_action.triggered.connect(self.toggle_enabled)
         menu.addAction(self.toggle_action)
-
         menu.addSeparator()
-
-        exit_action = QAction("خروج", self)
-        exit_action.triggered.connect(
-            self.exit_application
-        )
-        menu.addAction(exit_action)
-
+        menu.addAction("خروج", self.exit_application)
         self.tray.setContextMenu(menu)
-        self.tray.activated.connect(
-            self.tray_activated
-        )
+        self.tray.activated.connect(self.tray_activated)
+        tray_available = QSystemTrayIcon.isSystemTrayAvailable()
+        self.hide_button.setEnabled(tray_available)
+        if tray_available:
+            self.tray.show()
 
-        self.tray.show()
-
-    def create_app_icon(self):
+    @staticmethod
+    def create_app_icon():
         pixmap = QPixmap(64, 64)
         pixmap.fill(Qt.transparent)
-
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
-
         painter.setBrush(QColor("#2563EB"))
         painter.setPen(Qt.NoPen)
-        painter.drawRoundedRect(
-            2, 2, 60, 60, 14, 14
-        )
-
+        painter.drawRoundedRect(2, 2, 60, 60, 14, 14)
         painter.setPen(QColor("white"))
-        painter.setFont(
-            QFont("Segoe UI", 30, QFont.Bold)
-        )
-        painter.drawText(
-            pixmap.rect(),
-            Qt.AlignCenter,
-            "ف"
-        )
-
+        painter.setFont(QFont("Segoe UI", 30, QFont.Bold))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, "ف")
         painter.end()
         return QIcon(pixmap)
 
     def tray_activated(self, reason):
-        if reason == QSystemTrayIcon.DoubleClick:
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
             self.show_window()
 
-    # -----------------------------------------------------
-    # Enable / disable
-    # -----------------------------------------------------
-
-    def set_enabled(self, enabled: bool):
-        self.is_enabled = enabled
-
-        if enabled:
-            if not self.hotkey_registered:
-                try:
-                    keyboard.add_hotkey(
-                        "f10",
-                        self.on_hotkey,
-                        suppress=True,
-                    )
-                    self.hotkey_registered = True
-                except Exception as error:
-                    self.status_label.setText(
-                        f"خطا در ثبت میانبر: {error}"
-                    )
-                    self.is_enabled = False
-                    return
-
-            self.status_label.setText("وضعیت: فعال")
-            self.toggle_button.setText(
-                "غیرفعال کردن اصلاح متن"
-            )
-            self.tray.setToolTip(
-                "Persian Typo Fixer - فعال"
-            )
-
-        else:
-            if self.hotkey_registered:
-                keyboard.remove_hotkey("f10")
-                self.hotkey_registered = False
-
-            self.status_label.setText("وضعیت: غیرفعال")
-            self.toggle_button.setText(
-                "فعال کردن اصلاح متن"
-            )
-            self.tray.setToolTip(
-                "Persian Typo Fixer - غیرفعال"
-            )
-
+    def set_enabled(self, enabled):
+        try:
+            if enabled:
+                self.native.register_hotkey()
+            else:
+                self.native.unregister_hotkey()
+                self.converter.cancel()
+            self.is_enabled = enabled
+            message = "وضعیت: فعال — Ctrl+Alt+X" if enabled else "وضعیت: غیرفعال"
+        except OSError as error:
+            self.is_enabled = self.native.registered
+            message = f"خطای میان‌بر: {error}\nممکن است برنامه دیگری Ctrl+Alt+X را گرفته باشد."
         self.toggle_action.setChecked(self.is_enabled)
+        self.toggle_button.setText("غیرفعال کردن میان‌بر" if self.is_enabled else "فعال کردن میان‌بر")
+        self.status_label.setText(message)
+        self.tray.setToolTip("Persian Typo Fixer — " + ("فعال" if self.is_enabled else "غیرفعال"))
 
     def toggle_enabled(self):
         self.set_enabled(not self.is_enabled)
 
-    # -----------------------------------------------------
-    # Hotkey
-    # -----------------------------------------------------
-
-    def on_hotkey(self):
-        # The keyboard hook runs outside the Qt GUI thread.
-        # Send a signal so clipboard operations happen in Qt.
-        self.signals.hotkey_pressed.emit()
-
-    # -----------------------------------------------------
-    # Text conversion
-    # -----------------------------------------------------
-
     def start_conversion(self):
-        if not self.is_enabled:
-            return
-
-        if self.clipboard_marker is not None:
-            return
-
-        try:
-            self.old_clipboard = pyperclip.paste()
-        except Exception:
-            self.old_clipboard = ""
-
-        self.clipboard_marker = (
-            "__PERSIAN_FIXER_"
-            + uuid.uuid4().hex
-            + "__"
-        )
-
-        try:
-            pyperclip.copy(self.clipboard_marker)
-
-            # Copy the selection from the currently focused app.
-            keyboard.send("ctrl+c")
-
-        except Exception as error:
-            self.status_label.setText(
-                f"خطا در کپی متن: {error}"
-            )
-            self.restore_clipboard()
-            return
-
-        self.wait_count = 0
-
-        self.clipboard_timer = QTimer(self)
-        self.clipboard_timer.timeout.connect(
-            self.check_clipboard
-        )
-        self.clipboard_timer.start(100)
-
-    def check_clipboard(self):
-        self.wait_count += 1
-
-        try:
-            copied_text = pyperclip.paste()
-        except Exception:
-            copied_text = ""
-
-        if copied_text != self.clipboard_marker:
-            self.clipboard_timer.stop()
-
-            if not copied_text:
-                self.status_label.setText(
-                    "متنی انتخاب نشده است."
-                )
-                self.restore_clipboard()
-                return
-
-            converted_text = convert_text(copied_text)
-
-            if converted_text == copied_text:
-                self.status_label.setText(
-                    "متن قابل تبدیل نیست."
-                )
-                self.restore_clipboard()
-                return
-
-            try:
-                pyperclip.copy(converted_text)
-                self.converted_clipboard = converted_text
-
-                keyboard.send("ctrl+v")
-
-                self.status_label.setText(
-                    "متن با موفقیت اصلاح شد."
-                )
-
-                # Allow the target application to finish pasting.
-                QTimer.singleShot(
-                    1200,
-                    self.restore_clipboard,
-                )
-
-            except Exception as error:
-                self.status_label.setText(
-                    f"خطا در جایگزینی متن: {error}"
-                )
-                self.restore_clipboard()
-
-        elif self.wait_count >= 20:
-            self.clipboard_timer.stop()
-
-            self.status_label.setText(
-                "متن انتخاب‌شده دریافت نشد."
-            )
-            self.restore_clipboard()
-
-    def restore_clipboard(self):
-        if self.clipboard_marker is None:
-            return
-
-        try:
-            current_clipboard = pyperclip.paste()
-
-            # Restore only if our operation still owns the clipboard.
-            if (
-                current_clipboard == self.clipboard_marker
-                or current_clipboard == self.converted_clipboard
-            ):
-                pyperclip.copy(self.old_clipboard or "")
-
-        except Exception:
-            pass
-
-        self.clipboard_marker = None
-        self.old_clipboard = None
-        self.converted_clipboard = None
-
-    # -----------------------------------------------------
-    # Window behavior
-    # -----------------------------------------------------
+        if self.is_enabled and not self.quitting:
+            self.converter.start()
 
     def show_window(self):
         self.showNormal()
@@ -408,37 +137,43 @@ class MainWindow(QMainWindow):
         self.activateWindow()
 
     def closeEvent(self, event):
-        # Closing the window keeps the app in the tray.
-        self.hide()
-        event.ignore()
-
-    # -----------------------------------------------------
-    # Exit
-    # -----------------------------------------------------
+        if self.tray.isVisible() and not self.quitting:
+            self.hide()
+            event.ignore()
+        else:
+            event.accept()
+            self.exit_application()
 
     def exit_application(self):
-        if self.hotkey_registered:
-            keyboard.remove_hotkey("f10")
-            self.hotkey_registered = False
+        self.quitting = True
+        self.set_enabled(False)
+        # Let an already queued paste consume the clipboard before exiting.
+        if not self.converter.busy:
+            QApplication.quit()
 
+    def conversion_finished(self):
+        if self.quitting:
+            QApplication.quit()
+
+    def cleanup(self):
+        self.converter.cancel(force=True)
+        try:
+            self.native.unregister_hotkey()
+        except OSError:
+            pass  # Windows also releases registration on process exit.
+        QApplication.instance().removeNativeEventFilter(self.hotkey_filter)
         self.tray.hide()
-        QApplication.quit()
 
 
-# =========================================================
-# Entry point
-# =========================================================
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("Persian Typo Fixer")
+    app.setQuitOnLastWindowClosed(False)
+    window = MainWindow()
+    if "--background" not in sys.argv or not window.is_enabled or not window.tray.isVisible():
+        window.show()
+    return app.exec()
+
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)
-
-    window = MainWindow()
-
-    # Start in the background by default.
-    if "--show" in sys.argv:
-        window.show()
-    else:
-        window.hide()
-
-    sys.exit(app.exec())
+    sys.exit(main())
