@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: Save release files to Actions storage
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -29,6 +35,7 @@ jobs:
         shell: cmd
         run: build.bat
       - uses: actions/upload-artifact@v7.0.2
+        if: github.event_name == 'workflow_dispatch' && inputs.upload_artifacts
         with:
           name: PersianTypoFixer-windows-x64
           path: dist/release/*
