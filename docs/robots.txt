@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://salehghotbani.github.io/PersianTypeFixer/sitemap.xml
+Sitemap: https://persiantypefixer.ghotbani.ir/sitemap.xml

@@ -6,7 +6,7 @@ from urllib.parse import urlsplit, unquote
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1] / 'docs'
-CANONICAL = 'https://salehghotbani.github.io/PersianTypeFixer/'
+CANONICAL = 'https://persiantypefixer.ghotbani.ir/'
 
 
 class Document(HTMLParser):
@@ -47,10 +47,14 @@ def main():
     doc.feed(source)
     assert doc.h1s == 1
     assert doc.canonical == CANONICAL
+    assert (ROOT / 'CNAME').read_text().strip() == urlsplit(CANONICAL).hostname
     for key in ('description', 'viewport', 'robots', 'og:title', 'og:description', 'og:image', 'twitter:card'):
         assert doc.metadata.get(key), key
     assert doc.structured[0]['@type'] == 'SoftwareApplication'
     assert doc.structured[0]['url'] == CANONICAL
+    assert doc.metadata['og:url'] == CANONICAL
+    for key in ('og:image', 'twitter:image'):
+        assert doc.metadata[key] == CANONICAL + 'assets/social.png', key
     for link in doc.links:
         url = urlsplit(link)
         if not url.scheme and not url.netloc:
