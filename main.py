@@ -3,14 +3,46 @@
 import sys
 
 from PySide6.QtCore import QObject, Qt
-from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPixmap
-from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPalette, QPixmap
+from PySide6.QtWidgets import (
+    QApplication, QMenu, QProxyStyle, QStyle, QStyleOptionMenuItem, QSystemTrayIcon,
+)
 
 from app_version import VERSION
 from single_instance import SingleInstance
 from startup import StartupPreference
 from selection_conversion import QtClipboard, SelectionConverter
 from windows_api import HotkeyFilter, WindowsAPI
+
+
+class TrayMenuStyle(QProxyStyle):
+    def drawControl(self, element, option, painter, widget=None):
+        if element != QStyle.CE_MenuItem or not option.text:
+            super().drawControl(element, option, painter, widget)
+            return
+
+        # Ask Qt to paint the native check column on the left, then draw the RTL label.
+        row = QStyleOptionMenuItem(option)
+        row.direction = Qt.LeftToRight
+        row.text = ""
+        super().drawControl(element, row, painter, widget)
+
+        style_name = self.baseStyle().objectName()
+        solid_selection = style_name in {"windows", "fusion"} or (
+            QApplication.styleHints().colorScheme() == Qt.ColorScheme.Unknown
+        )
+        role = QPalette.Text
+        if solid_selection and option.state & QStyle.State_Selected:
+            role = QPalette.HighlightedText
+        painter.save()
+        painter.setFont(option.font)
+        self.drawItemText(
+            painter, option.rect.adjusted(0, 0, -10, 0),
+            Qt.AlignRight | Qt.AlignAbsolute | Qt.AlignVCenter
+            | Qt.TextForceRightToLeft | Qt.TextSingleLine,
+            option.palette, bool(option.state & QStyle.State_Enabled), option.text, role,
+        )
+        painter.restore()
 
 
 class TrayApplication(QObject):
@@ -37,6 +69,9 @@ class TrayApplication(QObject):
         self.tray = QSystemTrayIcon(self)
         self.menu = QMenu()
         self.menu.setLayoutDirection(Qt.RightToLeft)
+        style = TrayMenuStyle(self.menu.style().objectName())
+        style.setParent(self.menu)
+        self.menu.setStyle(style)
         self.toggle_action = QAction("فعال", self)
         self.toggle_action.setCheckable(True)
         self.toggle_action.triggered.connect(self.toggle_enabled)
