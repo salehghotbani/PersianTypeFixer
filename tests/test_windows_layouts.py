@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+from string import ascii_uppercase
 import sys
 import unittest
 
@@ -11,8 +13,8 @@ class WindowsLayoutTests(unittest.TestCase):
         from windows_api import WindowsAPI
         cls.native = WindowsAPI()
 
-    def mapping_for(self, name):
-        import ctypes
+    @contextmanager
+    def keyboard_layout(self, name):
         from ctypes import wintypes as w
         api = self.native.user32
         active = api.GetKeyboardLayout(0)
@@ -22,12 +24,28 @@ class WindowsLayoutTests(unittest.TestCase):
         handle = api.LoadKeyboardLayoutW(name, 0)
         self.assertTrue(handle, f"Could not load {name}")
         try:
-            mapping = dict(self.native._read_mapping(handle))
+            yield handle
             self.assertEqual(api.GetKeyboardLayout(0), active, "Reading a layout must not activate it")
-            return mapping
         finally:
             if handle not in existing:
                 api.UnloadKeyboardLayout(handle)
+
+    def mapping_for(self, name):
+        with self.keyboard_layout(name) as handle:
+            return dict(self.native._read_mapping(handle))
+
+    def test_physical_shortcut_keys_match_both_persian_layouts(self):
+        map_key = self.native.user32.MapVirtualKeyExW
+        with self.keyboard_layout("00000409") as english:
+            # MAPVK_VK_TO_VSC gets the physical position of each English letter.
+            scans = {letter: map_key(ord(letter), 0, english) for letter in ascii_uppercase}
+            self.assertTrue(all(scans.values()))
+        for name in ("00000429", "00050429"):
+            with self.subTest(layout=name), self.keyboard_layout(name) as persian:
+                self.assertEqual(dict(self.native._read_mapping(persian))["x"], "ط")
+                for letter, scan in scans.items():
+                    # MAPVK_VSC_TO_VK_EX gives the virtual key registered by the app.
+                    self.assertEqual(map_key(scan, 3, persian), ord(letter), letter)
 
     def test_classic_windows_persian_including_shift_and_peh(self):
         mapping = self.mapping_for("00000429")

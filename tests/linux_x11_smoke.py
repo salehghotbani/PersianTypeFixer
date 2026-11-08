@@ -123,6 +123,7 @@ def main():
     editor.show()
     app.processEvents()
     native = LinuxAPI()
+    assert native.mapping["x"] == "ط", "The default hotkey must use the X / ط key"
     window = native.display.create_resource_object("window", int(editor.winId()))
     window.set_input_focus(X.RevertToParent, X.CurrentTime)
     native.display.sync()
