@@ -1,6 +1,7 @@
 """Read the standard US and Iranian physical key mapping from XKB data."""
 
 import ctypes as c
+from string import ascii_lowercase
 
 
 class RuleNames(c.Structure):
@@ -45,8 +46,8 @@ def standard_mapping():
                 destination = xkb.xkb_keysym_to_utf32(persian)
                 if 32 < source < 127 and destination >= 32:
                     mapping.setdefault(chr(source), chr(destination))
-                    if chr(source) in "cvx":
-                        shortcuts[chr(source)] = (english, persian, code)
+                if chr(source) in ascii_lowercase:
+                    shortcuts[chr(source)] = (english, persian, code)
         return mapping, shortcuts
     finally:
         if keymap:

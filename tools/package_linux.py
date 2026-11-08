@@ -50,7 +50,7 @@ def main():
             f"Section: utils\nPriority: optional\nInstalled-Size: {(size + 1023) // 1024}\n"
             f"Depends: {', '.join(DEPENDENCIES)}\nHomepage: {METADATA['PROJECT_URL']}\n"
             "Description: Persian and English keyboard layout fixer\n"
-            " Correct selected text using Ctrl+Alt+X in an X11 desktop session.\n",
+            " Correct selected text with a configurable shortcut in an X11 desktop session.\n",
             encoding="utf-8",
         )
         subprocess.run(["dpkg-deb", "--root-owner-group", "--build", str(package),

@@ -7,6 +7,7 @@ from Xlib import X, XK, display, error
 from Xlib.ext import xfixes, xtest
 
 from linux_layouts import standard_mapping
+from shortcut import DEFAULT_SHORTCUT
 
 
 def window_id(window):
@@ -21,6 +22,7 @@ class LinuxAPI:
         except error.DisplayError as exc:
             raise OSError("اتصال به نشست X11 ممکن نشد.") from exc
         self.registered = False
+        self.shortcut = DEFAULT_SHORTCUT
         self.notifier = None
         try:
             for extension in ("XFIXES", "XTEST", "X-Resource"):
@@ -46,14 +48,10 @@ class LinuxAPI:
             modifiers = self.display.get_modifier_mapping()
             alt_keys = {self.keycode("Alt_L"), self.keycode("Alt_R")} - {0}
             alt = next((1 << index for index, codes in enumerate(modifiers) if alt_keys.intersection(codes)), X.Mod1Mask)
-            self.modifiers = X.ControlMask | alt
+            self.modifier_masks = {"Ctrl": X.ControlMask, "Alt": alt, "Shift": X.ShiftMask}
             locks = {self.keycode(key) for key in ("Num_Lock", "Scroll_Lock", "Caps_Lock")} - {0}
-            lock_masks = [1 << i for i, codes in enumerate(modifiers)
-                          if locks.intersection(codes) and not self.modifiers & (1 << i)]
-            self.grabs = [self.modifiers | sum(combo) for size in range(len(lock_masks) + 1)
-                          for combo in combinations(lock_masks, size)]
-            self.held_keys = {self.keys["x"]}
-            self.held_keys.update(code for codes in modifiers for code in codes if code and code not in locks)
+            self.lock_masks = [1 << i for i, codes in enumerate(modifiers) if locks.intersection(codes)]
+            self.held_modifiers = {code for codes in modifiers for code in codes if code and code not in locks}
             self.display.sync()
         except Exception:
             self.display.close()
@@ -72,24 +70,33 @@ class LinuxAPI:
             event = self.display.next_event()
             if event.type == self.selection_event:
                 self.sequence += 1
-            elif self.registered and event.type == X.KeyPress and event.detail == self.keys["x"]:
+            elif (self.registered and event.type == X.KeyPress and event.detail == self.grab_key
+                  and (event.state & 0xff) in self.grabs):
                 QTimer.singleShot(0, self.callback)
 
-    def register_hotkey(self):
+    def register_hotkey(self, shortcut=DEFAULT_SHORTCUT):
         if self.registered:
             return
+        self.grab_key = self.keys[shortcut.letter.lower()]
+        mask = 0
+        for key in shortcut.modifiers:
+            mask |= self.modifier_masks[key]
+        locks = [lock for lock in self.lock_masks if not lock & mask]
+        self.grabs = [mask | sum(combo) for size in range(len(locks) + 1)
+                      for combo in combinations(locks, size)]
         failed = error.CatchError(error.BadAccess)
         for modifiers in self.grabs:
-            self.root.grab_key(self.keys["x"], modifiers, False, X.GrabModeAsync, X.GrabModeAsync, onerror=failed)
+            self.root.grab_key(self.grab_key, modifiers, False, X.GrabModeAsync, X.GrabModeAsync, onerror=failed)
         self.display.sync()
         if failed.get_error():
             self.release_grabs()
-            raise OSError("میان‌بر Ctrl+Alt+X در اختیار برنامهٔ دیگری است.")
+            raise OSError(f"میان‌بر {shortcut} در اختیار برنامهٔ دیگری است.")
+        self.shortcut = shortcut
         self.registered = True
 
     def release_grabs(self):
         for modifiers in self.grabs:
-            self.root.ungrab_key(self.keys["x"], modifiers)
+            self.root.ungrab_key(self.grab_key, modifiers)
         self.display.sync()
 
     def unregister_hotkey(self):
@@ -103,7 +110,8 @@ class LinuxAPI:
 
     def keys_pressed(self):
         state = self.display.query_keymap()
-        return any(state[key // 8] & (1 << (key % 8)) for key in self.held_keys)
+        held_keys = self.held_modifiers | {self.keys[self.shortcut.letter.lower()]}
+        return any(state[key // 8] & (1 << (key % 8)) for key in held_keys)
 
     def clipboard_sequence(self):
         self.display.sync()
@@ -124,6 +132,8 @@ class LinuxAPI:
     def send_shortcut(self, letter):
         if not self.ctrl:
             raise OSError("کلید کنترل در X11 پیدا نشد.")
+        if self.registered and self.shortcut.conflicts_with_copy_or_paste(letter):
+            self.unregister_hotkey()
         key = self.keys[letter]
         for event, code in ((X.KeyPress, self.ctrl), (X.KeyPress, key),
                             (X.KeyRelease, key), (X.KeyRelease, self.ctrl)):

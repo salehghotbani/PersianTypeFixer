@@ -8,6 +8,7 @@ import sys
 from tempfile import TemporaryDirectory
 import time
 
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication, QPlainTextEdit
 from Xlib import X
 from Xlib.ext import xtest
@@ -17,6 +18,7 @@ sys.path.insert(0, str(ROOT))
 
 from linux_api import LinuxAPI, window_id
 from linux_session import SingleInstance, StartupPreference
+from shortcut import DEFAULT_SHORTCUT, MODIFIERS, Shortcut
 
 
 class XkbState(ctypes.Structure):
@@ -61,6 +63,58 @@ def wait_for(app, process, condition, message):
     raise RuntimeError(message)
 
 
+def exercise(app, editor, native, command, shortcut, cases):
+    process = subprocess.Popen(command)
+    try:
+        def hotkey_taken():
+            try:
+                native.register_hotkey(shortcut)
+            except OSError:
+                return True
+            native.unregister_hotkey()
+            return False
+
+        wait_for(app, process, hotkey_taken, f"The tray did not register {shortcut}")
+        for group, original, corrected in cases:
+            switch_layout(group)
+            editor.setPlainText(original)
+            editor.selectAll()
+            prior = f"prior clipboard for {shortcut} in XKB group {group}"
+            clipboard = app.clipboard()
+            clipboard.setText(prior)
+            app.processEvents()
+            assert editor.hasFocus() and editor.textCursor().hasSelection()
+            prior_owner = window_id(native.display.get_selection_owner(native.clipboard))
+            assert native.copy_belongs_to(native.focused_target())
+            keycodes = [native.keycode(f"{key.replace('Ctrl', 'Control')}_L")
+                        for key in MODIFIERS if key in shortcut.modifiers]
+            keycodes.append(native.keys[shortcut.letter.lower()])
+            for code in keycodes:
+                xtest.fake_input(native.display, X.KeyPress, code)
+            for code in reversed(keycodes):
+                xtest.fake_input(native.display, X.KeyRelease, code)
+            native.display.flush()
+            wait_for(app, process, lambda: editor.toPlainText() == corrected,
+                     f"{shortcut} did not convert the selection for XKB group {group}")
+
+            # Read through a separate X11 client to bypass Qt's clipboard cache.
+            def restored():
+                owner = window_id(native.display.get_selection_owner(native.clipboard))
+                if not owner or owner == prior_owner:
+                    return False
+                result = subprocess.run(
+                    ["xclip", "-selection", "clipboard", "-out"],
+                    capture_output=True, encoding="utf-8", timeout=2,
+                )
+                return result.returncode == 0 and result.stdout == prior
+
+            wait_for(app, process, restored, f"Clipboard not restored for {shortcut} and XKB group {group}")
+            wait_for(app, process, hotkey_taken, f"The tray did not restore {shortcut} after conversion")
+    finally:
+        process.terminate()
+        process.wait(timeout=5)
+
+
 def main():
     app = QApplication([])
     # Keep a client connected while setxkbmap exits so the X server retains the map.
@@ -90,61 +144,21 @@ def main():
         startup.set_enabled(False)
         assert not startup.is_enabled()
 
-        process = subprocess.Popen(command)
+        cases = ((0, "sghl", "سلام"), (1, "سلام", "sghl"))
+        settings = QSettings(str(Path(directory) / "ghotbani.ir/PersianTypoFixer.conf"), QSettings.Format.IniFormat)
         try:
-            def hotkey_taken():
-                try:
-                    native.register_hotkey()
-                except OSError:
-                    return True
-                native.unregister_hotkey()
-                return False
-
-            wait_for(app, process, hotkey_taken, "The tray did not register Ctrl+Alt+X")
-            for group, original, corrected in ((0, "sghl", "سلام"), (1, "سلام", "sghl")):
-                switch_layout(group)
-                editor.setPlainText(original)
-                editor.selectAll()
-                prior = f"prior clipboard for XKB group {group}"
-                clipboard = app.clipboard()
-                clipboard.setText(prior)
-                app.processEvents()
-                assert editor.hasFocus() and editor.textCursor().hasSelection()
-                prior_owner = window_id(native.display.get_selection_owner(native.clipboard))
-                assert native.copy_belongs_to((window.id, window.id))
-                keycodes = [native.ctrl, native.keycode("Alt_L"), native.keys["x"]]
-                for code in keycodes:
-                    xtest.fake_input(native.display, X.KeyPress, code)
-                for code in reversed(keycodes):
-                    xtest.fake_input(native.display, X.KeyRelease, code)
-                native.display.flush()
-                wait_for(app, process, lambda: editor.toPlainText() == corrected,
-                         f"Selection was not converted for XKB group {group}")
-                # Qt caches the ownership flag. X11 can deliver a selection clear
-                # with the same timestamp as the previous write, leaving it stale.
-                # Read through a separate X11 client to avoid Qt's cached data too.
-                def restored():
-                    owner = window_id(native.display.get_selection_owner(native.clipboard))
-                    if not owner or owner == prior_owner:
-                        return False
-                    result = subprocess.run(
-                        ["xclip", "-selection", "clipboard", "-out"],
-                        capture_output=True, encoding="utf-8", timeout=2,
-                    )
-                    return result.returncode == 0 and result.stdout == prior
-
-                try:
-                    wait_for(app, process, restored, f"Clipboard not restored for XKB group {group}")
-                except RuntimeError:
-                    owner = window_id(native.display.get_selection_owner(native.clipboard))
-                    print(f"Clipboard owner {owner!r} (initial {prior_owner!r}), text {clipboard.text()!r}",
-                          file=sys.stderr, flush=True)
-                    raise
+            exercise(app, editor, native, command, DEFAULT_SHORTCUT, cases)
+            for shortcut, case in (
+                (Shortcut("J", frozenset({"Alt", "Shift"})), cases[1]),
+                (Shortcut("C", frozenset({"Ctrl"})), cases[0]),
+                (Shortcut("V", frozenset({"Ctrl"})), cases[1]),
+            ):
+                settings.setValue("shortcut", str(shortcut))
+                settings.sync()
+                exercise(app, editor, native, command, shortcut, (case,))
         finally:
-            process.terminate()
-            process.wait(timeout=5)
             native.close()
-    print("X11 global shortcut, both directions, clipboard restoration, and XDG autostart passed")
+    print("Default and custom X11 shortcuts, both directions, clipboard restoration, and XDG autostart passed")
 
 
 if __name__ == "__main__":

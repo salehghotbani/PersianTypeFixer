@@ -7,10 +7,12 @@ from functools import lru_cache
 
 from PySide6.QtCore import QAbstractNativeEventFilter
 
+from shortcut import DEFAULT_SHORTCUT
+
 HOTKEY_ID = 0x5054
 WM_HOTKEY = 0x0312
-VK_X = 0x58
-MOD_CONTROL_ALT_NOREPEAT = 0x4003
+MOD_NOREPEAT = 0x4000
+MODIFIER_MASKS = {"Alt": 0x0001, "Ctrl": 0x0002, "Shift": 0x0004}
 KEYEVENTF_KEYUP = 0x0002
 ULONG_PTR = ctypes.c_size_t
 
@@ -80,14 +82,15 @@ class WindowsAPI:
             function.argtypes = arguments
             function.restype = result
         self.registered = False
+        self.shortcut = DEFAULT_SHORTCUT
         self.last_persian_layout = None
 
-    def register_hotkey(self):
+    def register_hotkey(self, shortcut=DEFAULT_SHORTCUT):
         if not self.registered:
-            if not self.user32.RegisterHotKey(
-                None, HOTKEY_ID, MOD_CONTROL_ALT_NOREPEAT, VK_X
-            ):
+            mask = MOD_NOREPEAT | sum(MODIFIER_MASKS[key] for key in shortcut.modifiers)
+            if not self.user32.RegisterHotKey(None, HOTKEY_ID, mask, ord(shortcut.letter)):
                 raise ctypes.WinError(ctypes.get_last_error())
+            self.shortcut = shortcut
             self.registered = True
 
     def unregister_hotkey(self):
@@ -109,7 +112,7 @@ class WindowsAPI:
     def keys_pressed(self) -> bool:
         # Wait rather than synthesize key-up for keys the user still holds.
         return any(self.user32.GetAsyncKeyState(key) & 0x8000
-                   for key in (0x10, 0x11, 0x12, 0x5B, 0x5C, VK_X))
+                   for key in (0x10, 0x11, 0x12, 0x5B, 0x5C, ord(self.shortcut.letter)))
 
     def clipboard_sequence(self) -> int:
         return self.user32.GetClipboardSequenceNumber()
@@ -124,6 +127,10 @@ class WindowsAPI:
         return bool(source_pid.value and source_pid.value == target_pid.value)
 
     def send_shortcut(self, letter: str):
+        # Release a matching global grab until the conversion finishes so the
+        # target receives the synthesized Ctrl+C or Ctrl+V.
+        if self.registered and self.shortcut.conflicts_with_copy_or_paste(letter):
+            self.unregister_hotkey()
         key = ord(letter.upper())
         events = (INPUT * 4)()
         for event, (vk, flags) in zip(events, (

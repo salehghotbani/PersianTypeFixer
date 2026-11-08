@@ -1,57 +1,67 @@
-"""Right-to-left Windows dialogs for the tray updater."""
+"""Right-to-left dialogs that follow the desktop color scheme."""
 
 import ctypes
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QImage, QTextDocument
+from PySide6.QtGui import QColor, QImage, QPalette, QTextDocument
 from PySide6.QtWidgets import (
     QApplication, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QTextBrowser, QVBoxLayout,
 )
 
-BACKGROUND = "#0E192E"
-FOREGROUND = "#EFF5FF"
 RIGHT = Qt.AlignRight | Qt.AlignAbsolute | Qt.AlignVCenter
 PERSIAN_DIGITS = str.maketrans("0123456789.", "۰۱۲۳۴۵۶۷۸۹٫")
 DWMWA_CAPTION_COLOR = 35
 DWMWA_TEXT_COLOR = 36
 
-THEME = f"""
-QDialog#updateDialog {{ background: {BACKGROUND}; }}
-QLabel {{ color: {FOREGROUND}; font-size: 14px; }}
+DARK = {"background": "#0E192E", "text": "#EFF5FF", "muted": "#B9C9E3",
+        "surface": "#14223B", "control": "#192A46", "hover": "#223958", "border": "#334D73",
+        "accent": "#285BC9", "accent_hover": "#2E66DB", "link": "#A9C9FF", "focus": "#ADCFFF",
+        "warning_bg": "#382C2C", "warning_text": "#FFD28F"}
+LIGHT = {"background": "#F7FAFF", "text": "#132745", "muted": "#405778",
+         "surface": "#FFFFFF", "control": "#E9F0FC", "hover": "#D9E7FC", "border": "#9CB2D2",
+         "accent": "#2152B7", "accent_hover": "#19469F", "link": "#1E4EA8", "focus": "#1B4DAB",
+         "warning_bg": "#FFF0DA", "warning_text": "#7B3A00"}
+
+THEME = """
+QDialog#updateDialog {{ background: {background}; }}
+QLabel {{ color: {text}; font-size: 14px; }}
 QLabel#title {{ font-size: 24px; font-weight: 700; }}
-QLabel#description {{ color: #B9C9E3; }}
+QLabel#description {{ color: {muted}; }}
 QLabel#badge, QLabel#version {{
-    background: #1B3051; color: #B8D3FF; border-radius: 11px;
+    background: {control}; color: {link}; border-radius: 11px;
     font-size: 12px; font-weight: 600; padding: 5px 11px;
 }}
-QLabel#version {{ background: #16253E; color: #D9E6FF; }}
-QLabel#warning {{
-    background: #382C2C; color: #FFD28F; border-radius: 11px;
+QLabel#warning, QLabel#validation {{
+    background: {warning_bg}; color: {warning_text}; border-radius: 11px;
     font-size: 12px; font-weight: 600; padding: 5px 11px;
 }}
-QLabel#percentage {{ color: #A9C9FF; font-size: 18px; font-weight: 700; }}
+QLabel#percentage {{ color: {link}; font-size: 18px; font-weight: 700; }}
 QTextBrowser#notes {{
-    background: #14223B; color: {FOREGROUND}; border: 1px solid #2B4164;
-    border-radius: 12px; padding: 5px; font-size: 14px; selection-background-color: #345FA7;
+    background: {surface}; color: {text}; border: 1px solid {border};
+    border-radius: 12px; padding: 5px; font-size: 14px;
+    selection-background-color: {accent}; selection-color: white;
 }}
-QTextBrowser#notes:focus {{ border-color: #79A8FF; }}
-QScrollBar:vertical {{ background: #14223B; width: 10px; margin: 5px 1px; }}
-QScrollBar::handle:vertical {{ background: #526C98; border-radius: 4px; min-height: 24px; }}
+QTextBrowser#notes:focus {{ border-color: {focus}; }}
+QScrollBar:vertical {{ background: {surface}; width: 10px; margin: 5px 1px; }}
+QScrollBar::handle:vertical {{ background: {border}; border-radius: 4px; min-height: 24px; }}
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: transparent; }}
-QProgressBar {{ background: #243756; border: 0; border-radius: 5px; height: 10px; }}
-QProgressBar::chunk {{ background: #669BFF; border-radius: 5px; }}
+QProgressBar {{ background: {control}; border: 0; border-radius: 5px; height: 10px; }}
+QProgressBar::chunk {{ background: {link}; border-radius: 5px; }}
 QPushButton {{
-    background: #192A46; color: {FOREGROUND}; border: 2px solid #334D73;
+    background: {control}; color: {text}; border: 2px solid {border};
     border-radius: 9px; min-height: 20px; padding: 7px 16px; font-size: 14px;
 }}
-QPushButton:hover {{ background: #223958; }}
-QPushButton:pressed {{ background: #15233B; }}
-QPushButton#primary {{ background: #285BC9; border-color: #285BC9; font-weight: 600; }}
-QPushButton#primary:hover {{ background: #2E66DB; }}
-QPushButton#primary:pressed {{ background: #204DAF; }}
-QPushButton:focus, QPushButton#primary:focus {{ border-color: #ADCFFF; }}
+QPushButton:hover {{ background: {hover}; }}
+QPushButton#primary {{ background: {accent}; color: white; border-color: {accent}; font-weight: 600; }}
+QPushButton#primary:hover {{ background: {accent_hover}; }}
+QPushButton:focus, QPushButton#primary:focus {{ border-color: {focus}; }}
+QCheckBox {{ color: {text}; spacing: 6px; }}
+QComboBox {{ background: {control}; color: {text}; min-width: 58px; padding: 5px; }}
+QComboBox QAbstractItemView {{
+    background: {surface}; color: {text}; selection-background-color: {accent}; selection-color: white;
+}}
 """
 
 
@@ -76,7 +86,10 @@ class UpdateDialog(QDialog):
         self.setWindowTitle(title)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setLayoutDirection(Qt.RightToLeft)
-        self.setStyleSheet(THEME)
+        self.colors = None
+        self.apply_theme()
+        QApplication.styleHints().colorSchemeChanged.connect(self.apply_theme)
+        QApplication.instance().paletteChanged.connect(self.apply_theme)
         self.setMinimumWidth(360)
 
         self.content = QVBoxLayout(self)
@@ -115,10 +128,31 @@ class UpdateDialog(QDialog):
 
     def showEvent(self, event):
         super().showEvent(event)
+        self.apply_caption()
+
+    def apply_theme(self, *_):
+        scheme = QApplication.styleHints().colorScheme()
+        palette = QApplication.palette()
+        dark = scheme == Qt.ColorScheme.Dark or (
+            scheme == Qt.ColorScheme.Unknown and palette.color(QPalette.Window).lightness() < 128
+        )
+        colors = DARK if dark else LIGHT
+        if self.colors is colors:
+            return
+        self.colors = colors
+        palette = QPalette()
+        palette.setColor(QPalette.Link, QColor(colors["link"]))
+        self.setPalette(palette)
+        self.setStyleSheet(THEME.format(**colors))
+        if self.isVisible():
+            self.apply_caption()
+
+    def apply_caption(self):
         if sys.platform == "win32" and QApplication.platformName() == "windows":
             # The explicit caption colors are supported by Windows 11.
             hwnd = ctypes.c_void_p(int(self.winId()))
-            for attribute, color in ((DWMWA_CAPTION_COLOR, BACKGROUND), (DWMWA_TEXT_COLOR, FOREGROUND)):
+            for attribute, role in ((DWMWA_CAPTION_COLOR, "background"), (DWMWA_TEXT_COLOR, "text")):
+                color = self.colors[role]
                 rgb = bytes.fromhex(color[1:])
                 colorref = ctypes.c_uint32(int.from_bytes(rgb, "little"))
                 ctypes.windll.dwmapi.DwmSetWindowAttribute(
@@ -135,9 +169,17 @@ def release_dialog(release, linux=False):
     )
     dialog.setAttribute(Qt.WA_DeleteOnClose)
     dialog.resize(520, 395)
+    dialog.content.addWidget(notes_browser(
+        release.notes.strip() or "برای این نسخه توضیحی منتشر نشده است.", "توضیحات انتشار",
+    ), 1)
+    dialog.add_actions("بعداً", primary="صفحهٔ دریافت" if linux else "دانلود و نصب")
+    return dialog
+
+
+def notes_browser(markdown, accessible_name):
     notes = QTextBrowser()
     notes.setObjectName("notes")
-    notes.setAccessibleName("توضیحات انتشار")
+    notes.setAccessibleName(accessible_name)
     notes.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
     document = ReleaseNotesDocument(notes)
     notes.setDocument(document)
@@ -147,12 +189,10 @@ def release_dialog(release, linux=False):
     text_layout.setAlignment(Qt.AlignRight | Qt.AlignAbsolute)
     document.setDefaultTextOption(text_layout)
     document.setMarkdown(
-        release.notes.strip() or "برای این نسخه توضیحی منتشر نشده است.",
+        markdown,
         QTextDocument.MarkdownDialectGitHub | QTextDocument.MarkdownNoHTML,
     )
-    dialog.content.addWidget(notes, 1)
-    dialog.add_actions("بعداً", primary="صفحهٔ دریافت" if linux else "دانلود و نصب")
-    return dialog
+    return notes
 
 
 class DownloadDialog(UpdateDialog):
