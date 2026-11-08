@@ -19,18 +19,32 @@ from linux_api import LinuxAPI
 from linux_session import SingleInstance, StartupPreference
 
 
+class XkbState(ctypes.Structure):
+    _fields_ = [
+        ("group", ctypes.c_ubyte), ("locked_group", ctypes.c_ubyte),
+        ("base_group", ctypes.c_ushort), ("latched_group", ctypes.c_ushort),
+        *[(name, ctypes.c_ubyte) for name in (
+            "mods", "base_mods", "latched_mods", "locked_mods", "compat_state",
+            "grab_mods", "compat_grab_mods", "lookup_mods", "compat_lookup_mods",
+        )],
+        ("ptr_buttons", ctypes.c_ushort),
+    ]
+
+
 def switch_layout(group):
     x11 = ctypes.CDLL("libX11.so.6")
     x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
     x11.XOpenDisplay.restype = ctypes.c_void_p
     x11.XkbLockGroup.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
-    x11.XSync.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    x11.XkbGetState.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.POINTER(XkbState)]
     x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
     connection = x11.XOpenDisplay(None)
     assert connection
     try:
         assert x11.XkbLockGroup(connection, 0x0100, group)
-        x11.XSync(connection, 0)
+        state = XkbState()
+        assert x11.XkbGetState(connection, 0x0100, ctypes.byref(state)) == 0
+        assert state.group == group, f"XKB group {group} was requested, but {state.group} is active"
     finally:
         x11.XCloseDisplay(connection)
 
@@ -48,8 +62,9 @@ def wait_for(app, process, condition, message):
 
 
 def main():
-    subprocess.run(["setxkbmap", "-layout", "us,ir"], check=True)
     app = QApplication([])
+    # Keep a client connected while setxkbmap exits so the X server retains the map.
+    subprocess.run(["setxkbmap", "-layout", "us,ir", "-option", ""], check=True)
     editor = QPlainTextEdit()
     editor.show()
     app.processEvents()
@@ -90,8 +105,12 @@ def main():
                 switch_layout(group)
                 editor.setPlainText(original)
                 editor.selectAll()
-                app.clipboard().setText("prior clipboard")
+                prior = f"prior clipboard for XKB group {group}"
+                clipboard = app.clipboard()
+                clipboard.setText(prior)
                 app.processEvents()
+                assert editor.hasFocus() and editor.textCursor().hasSelection()
+                assert clipboard.ownsClipboard()
                 keycodes = [native.ctrl, native.keycode("Alt_L"), native.keys["x"]]
                 for code in keycodes:
                     xtest.fake_input(native.display, X.KeyPress, code)
@@ -100,7 +119,7 @@ def main():
                 native.display.flush()
                 wait_for(app, process, lambda: editor.toPlainText() == corrected,
                          f"Selection was not converted for XKB group {group}")
-                wait_for(app, process, lambda: app.clipboard().text() == "prior clipboard",
+                wait_for(app, process, lambda: not clipboard.ownsClipboard() and clipboard.text() == prior,
                          "The original clipboard was not restored")
         finally:
             process.terminate()
