@@ -15,7 +15,7 @@ from Xlib.ext import xtest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from linux_api import LinuxAPI
+from linux_api import LinuxAPI, window_id
 from linux_session import SingleInstance, StartupPreference
 
 
@@ -110,7 +110,8 @@ def main():
                 clipboard.setText(prior)
                 app.processEvents()
                 assert editor.hasFocus() and editor.textCursor().hasSelection()
-                assert clipboard.ownsClipboard()
+                prior_owner = window_id(native.display.get_selection_owner(native.clipboard))
+                assert native.copy_belongs_to((window.id, window.id))
                 keycodes = [native.ctrl, native.keycode("Alt_L"), native.keys["x"]]
                 for code in keycodes:
                     xtest.fake_input(native.display, X.KeyPress, code)
@@ -119,8 +120,19 @@ def main():
                 native.display.flush()
                 wait_for(app, process, lambda: editor.toPlainText() == corrected,
                          f"Selection was not converted for XKB group {group}")
-                wait_for(app, process, lambda: not clipboard.ownsClipboard() and clipboard.text() == prior,
-                         "The original clipboard was not restored")
+                # Qt caches the ownership flag. X11 can deliver a selection clear
+                # with the same timestamp as the previous write, leaving it stale.
+                def restored():
+                    owner = window_id(native.display.get_selection_owner(native.clipboard))
+                    return owner and owner != prior_owner and clipboard.text() == prior
+
+                try:
+                    wait_for(app, process, restored, f"Clipboard not restored for XKB group {group}")
+                except RuntimeError:
+                    owner = window_id(native.display.get_selection_owner(native.clipboard))
+                    print(f"Clipboard owner {owner!r} (initial {prior_owner!r}), text {clipboard.text()!r}",
+                          file=sys.stderr, flush=True)
+                    raise
         finally:
             process.terminate()
             process.wait(timeout=5)
