@@ -4,7 +4,7 @@ import ctypes
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QTextDocument
+from PySide6.QtGui import QImage, QTextDocument
 from PySide6.QtWidgets import (
     QApplication, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QTextBrowser, QVBoxLayout,
 )
@@ -63,10 +63,10 @@ def label(text, name):
     return widget
 
 
-class ReleaseNotes(QTextBrowser):
+class ReleaseNotesDocument(QTextDocument):
     def loadResource(self, resource_type, name):
-        # Release notes are remote text. Embedded images and documents stay unloaded.
-        return None
+        # A null image is a valid QVariant, so Qt skips its local-file fallback.
+        return QImage()
 
 
 class UpdateDialog(QDialog):
@@ -133,11 +133,12 @@ def release_dialog(release):
     )
     dialog.setAttribute(Qt.WA_DeleteOnClose)
     dialog.resize(520, 395)
-    notes = ReleaseNotes()
+    notes = QTextBrowser()
     notes.setObjectName("notes")
     notes.setAccessibleName("توضیحات انتشار")
     notes.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
-    document = notes.document()
+    document = ReleaseNotesDocument(notes)
+    notes.setDocument(document)
     document.setDocumentMargin(14)
     text_layout = document.defaultTextOption()
     text_layout.setTextDirection(Qt.RightToLeft)
