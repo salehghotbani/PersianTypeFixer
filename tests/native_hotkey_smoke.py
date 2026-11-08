@@ -41,7 +41,7 @@ def main():
             assert not any(widget.isVisible() for widget in app.topLevelWidgets())
             assert [action.text() for action in controller.menu.actions()
                     if action.isVisible() and not action.isSeparator()] == [
-                        "فعال", "اجرا هنگام ورود به ویندوز", "بررسی به‌روزرسانی", "خروج",
+                        "فعال", "اجرا هنگام ورود به ویندوز", "بررسی به‌روزرسانی", "دربارهٔ برنامه", "خروج",
                     ]
             controller.toggle_action.trigger()
             assert not controller.is_enabled and not controller.native.registered

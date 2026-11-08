@@ -8,11 +8,11 @@ from pathlib import Path
 import subprocess
 import sys
 
-from PySide6.QtCore import QObject, QTimer
-from PySide6.QtGui import QAction
+from PySide6.QtCore import QObject, QTimer, QUrl
+from PySide6.QtGui import QAction, QDesktopServices
 from PySide6.QtWidgets import QDialog
 
-from app_version import VERSION
+from app_version import PROJECT_URL, VERSION
 from update_download import UpdateClient
 from update_dialogs import DownloadDialog, release_dialog, show_update_message
 
@@ -110,7 +110,7 @@ class TrayUpdates(QObject):
         if not self.release or self.client.reply or self.progress_dialog or self.controller.quitting:
             return
         if not self.details_dialog:
-            dialog = self.details_dialog = release_dialog(self.release)
+            dialog = self.details_dialog = release_dialog(self.release, linux=sys.platform.startswith("linux"))
             dialog.finished.connect(self.details_closed)
         self.details_dialog.show()
         self.details_dialog.raise_()
@@ -119,7 +119,10 @@ class TrayUpdates(QObject):
     def details_closed(self, result):
         self.details_dialog = None
         if result == QDialog.Accepted and not self.controller.quitting:
-            self.download()
+            if sys.platform.startswith("linux"):
+                QDesktopServices.openUrl(QUrl(f"{PROJECT_URL}/releases/tag/v{self.release.version}"))
+            else:
+                self.download()
 
     def download(self):
         self.action.setEnabled(False)

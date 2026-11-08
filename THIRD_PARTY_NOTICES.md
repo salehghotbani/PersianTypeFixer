@@ -8,10 +8,12 @@
 | --- | --- | --- |
 | CPython | 3.11.9 | Python Software Foundation؛ متن کامل در `licenses/Python.txt` |
 | PySide6 Essentials و Shiboken6 | 6.12.0 | LGPL-3.0؛ متعلق به The Qt Company Ltd. و مشارکت‌کنندگان |
-| Qt Core، Gui، Widgets و افزونه Windows | 6.12.0 | LGPL-3.0؛ متعلق به The Qt Company Ltd. و مشارکت‌کنندگان |
+| Qt Core، Gui، Network، Widgets و افزونه‌های سیستم‌عامل | 6.12.0 | LGPL-3.0؛ متعلق به The Qt Company Ltd. و مشارکت‌کنندگان |
 | PyInstaller bootloader | 6.22.3 | GPL-2.0-or-later با استثنای انتشار bootloader؛ `licenses/PyInstaller.txt` |
 | OpenSSL، وابستگی Python | 3.0.13 | Apache-2.0؛ `licenses/OpenSSL.txt`؛ Copyright 1998–2024 The OpenSSL Project Authors |
 | Microsoft Visual C++ runtime | همراه wheel رسمی Qt / Python | جزء اجرایی قابل بازتوزیع مایکروسافت؛ مجوز آن متعلق به مایکروسافت است |
+| Python Xlib (لینوکس) | 0.33 | LGPL-2.1-or-later؛ مجوز همراه فرادادهٔ بسته در `_internal` قرار دارد |
+| six (لینوکس) | 1.17.0 | MIT؛ مجوز همراه فرادادهٔ بسته در `_internal` قرار دارد |
 
 متن کامل LGPLv3 و GPLv3 در `licenses/LGPL-3.0.txt` و `licenses/GPL-3.0.txt`
 همراه بسته قرار دارد. مجموعه اعلان‌های upstream مربوط به Qt Base نیز در
@@ -29,6 +31,8 @@
 - [سورس CPython 3.11.9](https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tar.xz)
 - [سورس OpenSSL 3.0.13](https://github.com/openssl/openssl/releases/tag/openssl-3.0.13)
 - [سورس و مجوز PyInstaller 6.22.3](https://github.com/pyinstaller/pyinstaller/tree/v6.22.3)
+- [سورس و مجوز Python Xlib 0.33](https://github.com/python-xlib/python-xlib/tree/0.33)
+- [سورس و مجوز six 1.17.0](https://github.com/benjaminp/six/tree/1.17.0)
 
 کد برنامه و تمام دستورهای ساخت در tag همین انتشار در مخزن موجود است. هیچ
 محدودیتی برای اشکال‌زدایی، مهندسی معکوس یا تغییر کتابخانه‌ها به منظور استفاده

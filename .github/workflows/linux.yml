@@ -1,0 +1,56 @@
+name: Linux build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      upload_artifacts:
+        description: Save the Debian installer to Actions storage
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-python@v7.1.0
+        with:
+          python-version: "3.11.9"
+          architecture: x64
+      - name: Install build and X11 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb xauth x11-xkb-utils desktop-file-utils binutils \
+            fonts-dejavu-core libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
+          python -m pip install -r requirements-build.txt
+      - name: Build the Debian installer
+        run: |
+          python -m PyInstaller --noconfirm --clean packaging/linux.spec
+          python tools/package_linux.py
+      - name: Install and exercise the packaged app under X11
+        run: |
+          sudo apt-get install -y ./dist/release/*.deb
+          /opt/persiantypefixer/PersianTypoFixer --version
+          xvfb-run -a python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
+      - uses: actions/upload-artifact@v7.0.2
+        if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts)
+        with:
+          name: PersianTypoFixer-linux-amd64
+          path: dist/release/*.deb
+          if-no-files-found: error
+          retention-days: 7

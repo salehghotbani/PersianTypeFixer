@@ -1,3 +1,7 @@
-"""Release version shared by the application and Windows build."""
+"""Application metadata shared by the desktop app and packages."""
 
-VERSION = "1.2.1"
+APP_NAME = "Persian Typo Fixer"
+PUBLISHER = "Seyed Mohammad Saleh Ghotbani"
+PROJECT_URL = "https://github.com/salehghotbani/PersianTypeFixer"
+LICENSE_NAME = "MIT"
+VERSION = "1.3.0"

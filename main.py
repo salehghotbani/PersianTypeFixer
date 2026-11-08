@@ -1,5 +1,6 @@
-"""Windows tray application for correcting a selection with Ctrl+Alt+X."""
+"""Tray application for correcting a selection with Ctrl+Alt+X."""
 
+import os
 import sys
 
 from PySide6.QtCore import QObject, Qt, QTimer
@@ -8,13 +9,20 @@ from PySide6.QtWidgets import (
     QApplication, QMenu, QProxyStyle, QStyle, QStyleOptionMenuItem, QSystemTrayIcon,
 )
 
-from app_version import VERSION
-from single_instance import SingleInstance
-from startup import StartupPreference
+from about_dialog import show_about
+from app_version import APP_NAME, VERSION
 from selection_conversion import QtClipboard, SelectionConverter
 from tray_updates import TrayUpdates
 from update_dialogs import show_update_message
-from windows_api import HotkeyFilter, WindowsAPI
+
+LINUX = sys.platform.startswith("linux")
+if LINUX:
+    from linux_api import LinuxAPI as NativeAPI
+    from linux_session import DESKTOP_ID, SingleInstance, StartupPreference
+else:
+    from single_instance import SingleInstance
+    from startup import StartupPreference
+    from windows_api import HotkeyFilter, WindowsAPI as NativeAPI
 
 
 class TrayMenuStyle(QProxyStyle):
@@ -50,7 +58,7 @@ class TrayMenuStyle(QProxyStyle):
 class TrayApplication(QObject):
     def __init__(self, native=None):
         super().__init__()
-        self.native = WindowsAPI() if native is None else native
+        self.native = NativeAPI() if native is None else native
         self.is_enabled = False
         self.quitting = False
         self.cleaned_up = False
@@ -58,13 +66,19 @@ class TrayApplication(QObject):
         self.startup = StartupPreference()
         self.create_tray()
         self.updates = TrayUpdates(self)
+        about_action = QAction("دربارهٔ برنامه", self)
+        about_action.triggered.connect(lambda: show_about(self.create_app_icon(True)))
+        self.menu.insertAction(self.menu.actions()[-1], about_action)
         self.converter = SelectionConverter(
             self.native, QtClipboard(QApplication.clipboard()), self
         )
         self.converter.status_changed.connect(self.show_status)
         self.converter.finished.connect(self.conversion_finished)
-        self.hotkey_filter = HotkeyFilter(self.start_conversion)
-        QApplication.instance().installNativeEventFilter(self.hotkey_filter)
+        if LINUX:
+            self.native.watch_hotkey(self.start_conversion)
+        else:
+            self.hotkey_filter = HotkeyFilter(self.start_conversion)
+            QApplication.instance().installNativeEventFilter(self.hotkey_filter)
         QApplication.instance().aboutToQuit.connect(self.cleanup)
         self.set_enabled(True)
 
@@ -79,7 +93,7 @@ class TrayApplication(QObject):
         self.toggle_action.setCheckable(True)
         self.toggle_action.triggered.connect(self.toggle_enabled)
         self.menu.addAction(self.toggle_action)
-        self.startup_action = QAction("اجرا هنگام ورود به ویندوز", self)
+        self.startup_action = QAction("اجرا هنگام ورود" if LINUX else "اجرا هنگام ورود به ویندوز", self)
         self.startup_action.setCheckable(True)
         self.startup_action.triggered.connect(self.toggle_startup)
         self.menu.addAction(self.startup_action)
@@ -99,7 +113,7 @@ class TrayApplication(QObject):
         painter.setPen(Qt.NoPen)
         painter.drawRoundedRect(2, 2, 60, 60, 14, 14)
         painter.setPen(QColor("white"))
-        painter.setFont(QFont("Segoe UI", 30, QFont.Bold))
+        painter.setFont(QFont("DejaVu Sans" if LINUX else "Segoe UI", 30, QFont.Bold))
         painter.drawText(pixmap.rect(), Qt.AlignCenter, "ف")
         painter.end()
         return QIcon(pixmap)
@@ -123,7 +137,7 @@ class TrayApplication(QObject):
     def show_status(self, message):
         self.last_status = message
         state = "فعال — Ctrl+Alt+X" if self.is_enabled else "غیرفعال"
-        self.tray.setToolTip(f"Persian Typo Fixer\n{state}\n{message}")
+        self.tray.setToolTip(f"{APP_NAME}\n{state}\n{message}")
 
     def toggle_enabled(self):
         self.set_enabled(not self.is_enabled)
@@ -168,28 +182,50 @@ class TrayApplication(QObject):
         try:
             self.native.unregister_hotkey()
         except OSError:
-            pass  # Windows also releases registration on process exit.
-        QApplication.instance().removeNativeEventFilter(self.hotkey_filter)
+            pass  # The platform releases registration on process exit.
+        if LINUX:
+            self.native.close()
+        else:
+            QApplication.instance().removeNativeEventFilter(self.hotkey_filter)
         self.tray.hide()
 
 
 def main():
+    if sys.argv[1:] == ["--version"]:
+        print(f"{APP_NAME} {VERSION}")
+        return 0
+    if LINUX:
+        session = os.environ.get("XDG_SESSION_TYPE", "").lower()
+        if session == "wayland" or (not session and os.environ.get("WAYLAND_DISPLAY")) or not os.environ.get("DISPLAY"):
+            print("Persian Typo Fixer requires an X11 desktop session on Linux.", file=sys.stderr)
+            return 1
     instance = SingleInstance()
     if instance.already_running:
         instance.close()
         return 0
-    app = QApplication(sys.argv)
-    app.setApplicationName("Persian Typo Fixer")
-    app.setApplicationVersion(VERSION)
-    app.setQuitOnLastWindowClosed(False)
-    controller = TrayApplication()
-    controller.tray.show()
-    if "--update-install-failed" in sys.argv:
-        QTimer.singleShot(0, lambda: show_update_message(
-            "نصب به‌روزرسانی کامل نشد. از منوی کنار ساعت دوباره امتحان کنید.", warning=True,
-        ))
     try:
+        app = QApplication(sys.argv)
+        app.setApplicationName(APP_NAME)
+        app.setApplicationVersion(VERSION)
+        app.setQuitOnLastWindowClosed(False)
+        if LINUX:
+            app.setDesktopFileName(DESKTOP_ID)
+            if app.platformName() != "xcb":
+                print("Persian Typo Fixer requires the Qt X11 (xcb) platform.", file=sys.stderr)
+                return 1
+        controller = TrayApplication()
+        app.setWindowIcon(controller.create_app_icon(True))
+        controller.tray.show()
+        if "--update-install-failed" in sys.argv:
+            QTimer.singleShot(0, lambda: show_update_message(
+                "نصب به‌روزرسانی کامل نشد. از منوی کنار ساعت دوباره امتحان کنید.", warning=True,
+            ))
         return app.exec()
+    except OSError as error:
+        if not LINUX:
+            raise
+        print(f"{APP_NAME}: {error}", file=sys.stderr)
+        return 1
     finally:
         instance.close()
 

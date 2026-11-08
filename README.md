@@ -3,7 +3,7 @@
 **[وب‌سایت معرفی و دانلود برنامه](https://persiantypefixer.ghotbani.ir/)**
 
 اصلاح متن‌هایی که با زبان اشتباه صفحه‌کلید تایپ شده‌اند، در ویندوز ۱۰ نسخه ۱۸۰۹
-یا جدیدتر و ویندوز ۱۱. خروجی ساخته‌شده در این پروژه ۶۴ بیتی است.
+یا جدیدتر، ویندوز ۱۱ و نشست X11 در لینوکس. بسته‌های آماده برای x86-64 هستند.
 برای نمونه، `sghl` به «سلام» و «اثممخ» به `hello` تبدیل می‌شود.
 تبدیل در هر دو جهت فارسی و انگلیسی انجام می‌شود؛ برنامه مترجم یا غلط‌یاب املایی نیست.
 
@@ -14,22 +14,42 @@
 
 ## دریافت نسخه آماده
 
-**[دانلود نصاب نسخه 1.2.1 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.2.1/PersianTypoFixer-v1.2.1-windows-x64-setup.exe)**
+**[دانلود نصاب نسخه 1.3.0 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64-setup.exe)**
+
+**[دانلود بستهٔ نسخه 1.3.0 برای Debian و Ubuntu، معماری amd64](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-linux-amd64.deb)**
 
 [صفحه آخرین انتشار](https://github.com/salehghotbani/PersianTypeFixer/releases/latest)
 شامل این فایل‌هاست:
 
 | فایل | کاربرد |
 | --- | --- |
-| `PersianTypoFixer-v1.2.1-windows-x64-setup.exe` | نصب برای کاربر جاری، میان‌بر Start Menu و حذف‌کننده؛ مناسب اجرای خودکار. |
-| `PersianTypoFixer-v1.2.1-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
-| `PersianTypoFixer-v1.2.1-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
-| `PersianTypoFixer-v1.2.1-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
+| `PersianTypoFixer-v1.3.0-windows-x64-setup.exe` | نصب برای کاربر جاری، میان‌بر Start Menu و حذف‌کننده؛ مناسب اجرای خودکار. |
+| `PersianTypoFixer-v1.3.0-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
+| `PersianTypoFixer-v1.3.0-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
+| `PersianTypoFixer-v1.3.0-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
+| `PersianTypoFixer-v1.3.0-linux-amd64.deb` | نصب برنامه، آیکون و میان‌بر در فهرست برنامه‌های لینوکس. |
 | `SHA256SUMS.txt` | هش SHA-256 فایل‌ها برای بررسی یکسان بودن دانلود. |
 
 فقط یکی از دو نسخه EXE مستقل یا پوشه‌ای را اجرا کنید. نسخه مستقل در هر اجرا
 کتابخانه‌ها را در پوشه موقت باز می‌کند؛ نسخه پوشه‌ای معمولاً سریع‌تر شروع می‌شود.
-این انتشار برای Windows x64 است؛ نسخه مستقل به Python نصب‌شده روی سیستم نیاز ندارد.
+نسخهٔ مستقل ویندوز و بستهٔ لینوکس Python را همراه دارند.
+
+### نصب روی لینوکس
+
+بسته برای Ubuntu 22.04 و Debian 12 یا جدیدتر با معماری amd64 تهیه شده است. در
+پوشه‌ای که فایل را دریافت کرده‌اید، دستور زیر را اجرا کنید.
+
+```sh
+sudo apt install ./PersianTypoFixer-v1.3.0-linux-amd64.deb
+```
+
+از فهرست برنامه‌ها **Persian Typo Fixer** را باز کنید. برنامه به نشست **X11**
+و محیط دسکتاپ دارای سینی سیستم نیاز دارد. در نشست **Wayland** میان‌بر پشتیبانی
+نمی‌شود. تبدیل در لینوکس بر اساس چیدمان‌های استاندارد **US** و **Iranian** در XKB
+انجام می‌شود. کادر مقصد باید `Ctrl+C` و `Ctrl+V` را پشتیبانی کند.
+
+اجرای خودکار را از گزینهٔ «اجرا هنگام ورود» تنظیم کنید. به‌روزرسانی در لینوکس
+صفحهٔ انتشار را باز می‌کند تا بستهٔ تازه را با همان دستور `apt install` نصب کنید.
 
 ## استفاده
 
@@ -44,6 +64,7 @@
 - **فعال**: با برداشتن یا گذاشتن تیک، میان‌بر غیرفعال یا فعال می‌شود.
 - **اجرا هنگام ورود به ویندوز**: اجرای خودکار را با تیک فعال یا غیرفعال کنید. این انتخاب در نصاب هم وجود دارد و پیش‌فرض نصب جدید خاموش است.
 - **بررسی به‌روزرسانی**: آخرین نسخهٔ پایدار را از GitHub Releases بررسی کنید.
+- **دربارهٔ برنامه**: نسخهٔ در حال اجرا، سازنده، مجوز MIT، سورس و لینک گزارش مشکل را ببینید.
 - **خروج**: برنامه کاملاً بسته و میان‌بر آزاد می‌شود.
 
 آیکون در حالت فعال آبی و در حالت غیرفعال خاکستری است. با نگه داشتن ماوس روی
@@ -142,10 +163,10 @@ py -3.11 -m venv .venv
 
 ```text
 dist\release\
-  PersianTypoFixer-v1.2.1-windows-x64-setup.exe
-  PersianTypoFixer-v1.2.1-windows-x64.exe
-  PersianTypoFixer-v1.2.1-windows-x64-portable.zip
-  PersianTypoFixer-v1.2.1-windows-x64-notices.zip
+  PersianTypoFixer-v1.3.0-windows-x64-setup.exe
+  PersianTypoFixer-v1.3.0-windows-x64.exe
+  PersianTypoFixer-v1.3.0-windows-x64-portable.zip
+  PersianTypoFixer-v1.3.0-windows-x64-notices.zip
   SHA256SUMS.txt
 ```
 
@@ -156,7 +177,7 @@ dist\release\
 برای بررسی هش فایل دانلودشده در PowerShell:
 
 ```powershell
-Get-FileHash .\PersianTypoFixer-v1.2.1-windows-x64.exe -Algorithm SHA256
+Get-FileHash .\PersianTypoFixer-v1.3.0-windows-x64.exe -Algorithm SHA256
 ```
 
 خروجی را با `SHA256SUMS.txt` همان انتشار مقایسه کنید. GitHub Actions نیز روی

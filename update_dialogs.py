@@ -95,11 +95,11 @@ class UpdateDialog(QDialog):
         subtitle.setWordWrap(True)
         self.content.addWidget(subtitle)
 
-    def add_actions(self, dismiss, install=False):
+    def add_actions(self, dismiss, primary=None):
         row = QHBoxLayout()
         row.setSpacing(9)
-        if install:
-            button = QPushButton("دانلود و نصب")
+        if primary:
+            button = QPushButton(primary)
             button.setObjectName("primary")
             button.setAutoDefault(False)
             button.clicked.connect(self.accept)
@@ -126,9 +126,11 @@ class UpdateDialog(QDialog):
                 )
 
 
-def release_dialog(release):
+def release_dialog(release, linux=False):
+    description = ("تغییرات را بخوانید و بستهٔ نصب را از صفحهٔ انتشار بگیرید." if linux
+                   else "تغییرات این نسخه را بخوانید و نصب را شروع کنید.")
     dialog = UpdateDialog(
-        "نسخهٔ جدید آماده است", "به‌روزرسانی", "تغییرات این نسخه را بخوانید و نصب را شروع کنید.",
+        "نسخهٔ جدید آماده است", "به‌روزرسانی", description,
         version=release.version,
     )
     dialog.setAttribute(Qt.WA_DeleteOnClose)
@@ -149,7 +151,7 @@ def release_dialog(release):
         QTextDocument.MarkdownDialectGitHub | QTextDocument.MarkdownNoHTML,
     )
     dialog.content.addWidget(notes, 1)
-    dialog.add_actions("بعداً", install=True)
+    dialog.add_actions("بعداً", primary="صفحهٔ دریافت" if linux else "دانلود و نصب")
     return dialog
 
 
