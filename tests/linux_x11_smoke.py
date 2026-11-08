@@ -122,9 +122,16 @@ def main():
                          f"Selection was not converted for XKB group {group}")
                 # Qt caches the ownership flag. X11 can deliver a selection clear
                 # with the same timestamp as the previous write, leaving it stale.
+                # Read through a separate X11 client to avoid Qt's cached data too.
                 def restored():
                     owner = window_id(native.display.get_selection_owner(native.clipboard))
-                    return owner and owner != prior_owner and clipboard.text() == prior
+                    if not owner or owner == prior_owner:
+                        return False
+                    result = subprocess.run(
+                        ["xclip", "-selection", "clipboard", "-out"],
+                        capture_output=True, encoding="utf-8", timeout=2,
+                    )
+                    return result.returncode == 0 and result.stdout == prior
 
                 try:
                     wait_for(app, process, restored, f"Clipboard not restored for XKB group {group}")

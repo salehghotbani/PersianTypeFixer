@@ -34,7 +34,7 @@ jobs:
       - name: Install build and X11 dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb xauth x11-xkb-utils desktop-file-utils binutils \
+          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils \
             fonts-dejavu-core libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
           python -m pip install -r requirements-build.txt
