@@ -39,9 +39,13 @@ def main():
         try:
             assert received == ["converted"], received
             assert not any(widget.isVisible() for widget in app.topLevelWidgets())
+            assert controller.updates.client is None
+            assert "PySide6.QtNetwork" not in sys.modules
+            assert controller.updates.initial_check.interval() == 120_000
+            assert not controller.converter.timer.isActive()
             assert [action.text() for action in controller.menu.actions()
                     if action.isVisible() and not action.isSeparator()] == [
-                        "فعال", "اجرا هنگام ورود به ویندوز", "بررسی به‌روزرسانی", "دربارهٔ برنامه", "خروج",
+                        "فعال", "اجرا هنگام روشن کردن سیستم", "بررسی به‌روزرسانی", "دربارهٔ برنامه", "خروج",
                     ]
             controller.toggle_action.trigger()
             assert not controller.is_enabled and not controller.native.registered
