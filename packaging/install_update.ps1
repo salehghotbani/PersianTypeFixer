@@ -16,7 +16,12 @@ try {
 }
 if ($failed) {
     if ($update.restart -and (Test-Path -LiteralPath $update.restart -PathType Leaf)) {
-        Start-Process -FilePath $update.restart -ErrorAction SilentlyContinue
+        try {
+            Start-Process -FilePath $update.restart -ArgumentList '--update-install-failed'
+            exit 1
+        } catch {
+            # Fall back to a native error if the app itself cannot be started.
+        }
     }
     Add-Type -AssemblyName System.Windows.Forms
     [void][Windows.Forms.MessageBox]::Show(
