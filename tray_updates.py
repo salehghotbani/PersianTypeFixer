@@ -8,14 +8,13 @@ from pathlib import Path
 import subprocess
 import sys
 
-from PySide6.QtCore import QObject, Qt, QTimer
+from PySide6.QtCore import QObject, QTimer
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import (
-    QDialog, QDialogButtonBox, QLabel, QMessageBox, QPlainTextEdit, QProgressDialog, QVBoxLayout,
-)
+from PySide6.QtWidgets import QDialog
 
 from app_version import VERSION
 from update_download import UpdateClient
+from update_dialogs import DownloadDialog, release_dialog, show_update_message
 
 CHECK_INTERVAL = 24 * 60 * 60 * 1000
 CHECK_LABEL = "بررسی به‌روزرسانی"
@@ -105,37 +104,14 @@ class TrayUpdates(QObject):
                 f"نسخهٔ {release.version} منتشر شده است. برای دیدن تغییرات کلیک کنید.",
             )
         elif self.manual and not release:
-            self.message("نسخهٔ نصب‌شده به‌روز است.")
+            show_update_message("نسخهٔ نصب‌شده به‌روز است.")
 
     def show_details(self):
         if not self.release or self.client.reply or self.progress_dialog or self.controller.quitting:
             return
         if not self.details_dialog:
-            release = self.release
-            dialog = self.details_dialog = QDialog()
-            dialog.setWindowTitle("نسخهٔ جدید Persian Typo Fixer")
-            dialog.setLayoutDirection(Qt.RightToLeft)
-            dialog.setAttribute(Qt.WA_DeleteOnClose)
-            dialog.resize(500, 340)
-            layout = QVBoxLayout(dialog)
-            layout.addWidget(QLabel(f"نسخهٔ {release.version} منتشر شده است. تغییرات این نسخه"))
-            notes = QPlainTextEdit()
-            notes.setReadOnly(True)
-            text_layout = notes.document().defaultTextOption()
-            text_layout.setTextDirection(Qt.RightToLeft)
-            text_layout.setAlignment(Qt.AlignRight | Qt.AlignAbsolute)
-            notes.document().setDefaultTextOption(text_layout)
-            notes.setPlainText(release.notes.strip() or "برای این نسخه توضیحی منتشر نشده است.")
-            layout.addWidget(notes)
-            buttons = QDialogButtonBox()
-            install = buttons.addButton("دانلود و نصب", QDialogButtonBox.AcceptRole)
-            install.setAutoDefault(False)
-            later = buttons.addButton("بعداً", QDialogButtonBox.RejectRole)
-            later.setDefault(True)
-            buttons.accepted.connect(dialog.accept)
-            buttons.rejected.connect(dialog.reject)
+            dialog = self.details_dialog = release_dialog(self.release)
             dialog.finished.connect(self.details_closed)
-            layout.addWidget(buttons)
         self.details_dialog.show()
         self.details_dialog.raise_()
         self.details_dialog.activateWindow()
@@ -149,22 +125,14 @@ class TrayUpdates(QObject):
         self.action.setEnabled(False)
         self.action.setText("در حال دانلود به‌روزرسانی…")
         self.available_action.setVisible(False)
-        dialog = self.progress_dialog = QProgressDialog(
-            f"در حال دانلود نسخهٔ {self.release.version}…", "لغو دانلود", 0, self.release.size,
-        )
-        dialog.setWindowTitle("دانلود به‌روزرسانی")
-        dialog.setLayoutDirection(Qt.RightToLeft)
-        dialog.setAutoClose(False)
-        dialog.setAutoReset(False)
-        dialog.setMinimumDuration(0)
-        dialog.setValue(0)
-        dialog.canceled.connect(self.cancel_download)
+        dialog = self.progress_dialog = DownloadDialog(self.release)
+        dialog.rejected.connect(self.cancel_download)
         dialog.show()
         self.client.start_download(self.release)
 
     def progress(self, received, total):
         if self.progress_dialog:
-            self.progress_dialog.setValue(received)
+            self.progress_dialog.set_progress(received, total)
 
     def close_progress(self):
         if self.progress_dialog:
@@ -182,7 +150,7 @@ class TrayUpdates(QObject):
         self.close_progress()
         self.restore_action()
         if report:
-            self.message(message, warning=True)
+            show_update_message(message, warning=True)
 
     def install(self, download):
         self.close_progress()
@@ -191,7 +159,7 @@ class TrayUpdates(QObject):
         except (OSError, KeyError):
             download.remove()
             self.restore_action()
-            self.message("اجرای نصاب ممکن نشد. دوباره امتحان کنید.", warning=True)
+            show_update_message("اجرای نصاب ممکن نشد. دوباره امتحان کنید.", warning=True)
             return
         # The installer helper now owns this directory and removes it after Setup exits.
         download.directory.setAutoRemove(False)
@@ -204,15 +172,3 @@ class TrayUpdates(QObject):
         self.close_progress()
         if self.details_dialog:
             self.details_dialog.reject()
-
-    @staticmethod
-    def message(text, warning=False):
-        dialog = QMessageBox()
-        dialog.setWindowTitle("به‌روزرسانی Persian Typo Fixer")
-        dialog.setLayoutDirection(Qt.RightToLeft)
-        dialog.setTextFormat(Qt.PlainText)
-        dialog.setIcon(QMessageBox.Warning if warning else QMessageBox.Information)
-        dialog.setText(text)
-        dialog.setStandardButtons(QMessageBox.Ok)
-        dialog.button(QMessageBox.Ok).setText("باشه")
-        dialog.exec()

@@ -2,7 +2,7 @@
 
 import sys
 
-from PySide6.QtCore import QObject, Qt
+from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMenu, QProxyStyle, QStyle, QStyleOptionMenuItem, QSystemTrayIcon,
@@ -13,6 +13,7 @@ from single_instance import SingleInstance
 from startup import StartupPreference
 from selection_conversion import QtClipboard, SelectionConverter
 from tray_updates import TrayUpdates
+from update_dialogs import show_update_message
 from windows_api import HotkeyFilter, WindowsAPI
 
 
@@ -183,6 +184,10 @@ def main():
     app.setQuitOnLastWindowClosed(False)
     controller = TrayApplication()
     controller.tray.show()
+    if "--update-install-failed" in sys.argv:
+        QTimer.singleShot(0, lambda: show_update_message(
+            "نصب به‌روزرسانی کامل نشد. از منوی کنار ساعت دوباره امتحان کنید.", warning=True,
+        ))
     try:
         return app.exec()
     finally:
