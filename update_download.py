@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sys
 
 from PySide6.QtCore import QDir, QObject, QTemporaryDir, QUrl, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
@@ -26,7 +27,7 @@ class Release:
     sha256: str
 
 
-def parse_release(payload, current_version):
+def parse_release(payload, current_version, platform="win32"):
     if not isinstance(payload, dict):
         raise ValueError("Invalid release response")
     if payload.get("draft") or payload.get("prerelease"):
@@ -38,7 +39,10 @@ def parse_release(payload, current_version):
     if tuple(map(int, version.split("."))) <= tuple(map(int, current_version.split("."))):
         return None
 
-    filename = f"PersianTypoFixer-{tag}-windows-x64-setup.exe"
+    if platform.startswith("linux"):
+        filename = f"PersianTypoFixer-{tag}-linux-amd64.deb"
+    else:
+        filename = f"PersianTypoFixer-{tag}-windows-x64-setup.exe"
     url = f"https://github.com/{REPO}/releases/download/{tag}/{filename}"
     assets = payload.get("assets")
     if not isinstance(assets, list):
@@ -53,7 +57,7 @@ def parse_release(payload, current_version):
                 and isinstance(digest, str) and re.fullmatch(r"sha256:[0-9a-f]{64}", digest)):
             notes = payload.get("body")
             return Release(version, notes if isinstance(notes, str) else "", url, size, digest[7:])
-    raise ValueError("The release has no verifiable Windows installer")
+    raise ValueError("The release has no verifiable installer for this platform")
 
 
 class InstallerDownload:
@@ -187,7 +191,7 @@ class UpdateClient(QObject):
                 download, self.download = self.download, None
                 self.downloaded.emit(download)
             else:
-                release = parse_release(json.loads(self.metadata), self.version)
+                release = parse_release(json.loads(self.metadata), self.version, sys.platform)
                 self.metadata.clear()
                 self.checked.emit(release)
         except (OSError, ValueError, RecursionError):

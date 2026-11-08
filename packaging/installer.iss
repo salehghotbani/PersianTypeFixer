@@ -1,14 +1,20 @@
 #ifndef AppVersion
   #error AppVersion is required
 #endif
+#define Publisher "Seyed Mohammad Saleh Ghotbani"
 
 [Setup]
 AppId={{4CD29712-8CCB-4E55-85E5-1D9295313A97}
 AppName=Persian Typo Fixer
 AppVersion={#AppVersion}
 AppMutex=Local\PersianTypoFixer.Singleton
-AppPublisher=Seyed Mohammad Saleh Ghotbani
+AppPublisher={#Publisher}
 AppPublisherURL=https://github.com/salehghotbani/PersianTypeFixer
+AppSupportURL=https://github.com/salehghotbani/PersianTypeFixer/issues
+VersionInfoCompany={#Publisher}
+VersionInfoProductName=Persian Typo Fixer
+VersionInfoDescription=Persian Typo Fixer Windows Installer
+VersionInfoVersion={#AppVersion}
 DefaultDirName={localappdata}\Programs\PersianTypoFixer
 DefaultGroupName=Persian Typo Fixer
 PrivilegesRequired=lowest
@@ -39,7 +45,7 @@ Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Persian Typo Fixer"; Filename: "{app}\PersianTypoFixer.exe"
+Name: "{group}\Persian Typo Fixer"; Filename: "{app}\PersianTypoFixer.exe"; IconFilename: "{app}\PersianTypoFixer.exe"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PersianTypoFixer"; ValueData: """{app}\PersianTypoFixer.exe"""; Tasks: autostart; Flags: uninsdeletevalue

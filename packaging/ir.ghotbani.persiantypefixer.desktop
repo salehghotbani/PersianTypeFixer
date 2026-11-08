@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Persian Typo Fixer
+Name[fa]=اصلاح تایپ فارسی و انگلیسی
+Comment=Correct selected text typed with the wrong keyboard layout
+Comment[fa]=اصلاح متن انتخاب‌شده بین چیدمان فارسی و انگلیسی
+Exec=/opt/persiantypefixer/PersianTypoFixer
+Icon=ir.ghotbani.persiantypefixer
+Categories=Utility;
+Terminal=false
