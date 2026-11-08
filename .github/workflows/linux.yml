@@ -43,10 +43,13 @@ jobs:
           python -m PyInstaller --noconfirm --clean packaging/linux.spec
           python tools/package_linux.py
       - name: Install and exercise the packaged app under X11
+        env:
+          QT_QPA_PLATFORM: xcb
+          XDG_SESSION_TYPE: x11
         run: |
           sudo apt-get install -y ./dist/release/*.deb
           /opt/persiantypefixer/PersianTypoFixer --version
-          xvfb-run -a python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
+          xvfb-run -a -s '-screen 0 1280x720x24 -noreset' python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
       - uses: actions/upload-artifact@v7.0.2
         if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts)
         with:

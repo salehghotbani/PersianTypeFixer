@@ -1,208 +1,166 @@
-# اصلاح تایپ فارسی و انگلیسی — Persian Typo Fixer
+<div align="center">
+  <img src="docs/assets/icon.svg" width="80" height="80" alt="آیکون Persian Typo Fixer">
+  <h1>Persian Typo Fixer</h1>
+  <p dir="rtl"><strong>اصلاح تایپ فارسی و انگلیسی با یک میان‌بر</strong></p>
+  <p dir="rtl">متنی را که با چیدمان اشتباه نوشته‌ای انتخاب کن و <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>X</kbd> را بزن.</p>
+</div>
 
-**[وب‌سایت معرفی و دانلود برنامه](https://persiantypefixer.ghotbani.ir/)**
+<div align="center">
 
-اصلاح متن‌هایی که با زبان اشتباه صفحه‌کلید تایپ شده‌اند، در ویندوز ۱۰ نسخه ۱۸۰۹
-یا جدیدتر، ویندوز ۱۱ و نشست X11 در لینوکس. بسته‌های آماده برای x86-64 هستند.
-برای نمونه، `sghl` به «سلام» و «اثممخ» به `hello` تبدیل می‌شود.
-تبدیل در هر دو جهت فارسی و انگلیسی انجام می‌شود؛ برنامه مترجم یا غلط‌یاب املایی نیست.
+[![آخرین نسخه][release-badge]][releases]
+[![دانلود ویندوز][windows-badge]][windows]
+[![دانلود لینوکس][linux-badge]][linux]
+[![مجوز MIT][license-badge]](LICENSE)
 
-| متن تایپ‌شده | متن اصلاح‌شده |
-| --- | --- |
-| `sghl` | سلام |
-| `اثممخ` | `hello` |
+[![ساخت ویندوز][windows-ci]][windows-workflow]
+[![ساخت و آزمون لینوکس][linux-ci]][linux-workflow]
+[![بررسی وب‌سایت][site-ci]][site-workflow]
 
-## دریافت نسخه آماده
+**[وب‌سایت و نمایش زنده][website] · [یادداشت‌های انتشار](CHANGELOG.md) · [گزارش مشکل][issues]**
 
-**[دانلود نصاب نسخه 1.3.0 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64-setup.exe)**
+</div>
 
-**[دانلود بستهٔ نسخه 1.3.0 برای Debian و Ubuntu، معماری amd64](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-linux-amd64.deb)**
+<div dir="rtl">
 
-[صفحه آخرین انتشار](https://github.com/salehghotbani/PersianTypeFixer/releases/latest)
-شامل این فایل‌هاست:
+## دانلود و نصب
 
-| فایل | کاربرد |
-| --- | --- |
-| `PersianTypoFixer-v1.3.0-windows-x64-setup.exe` | نصب برای کاربر جاری، میان‌بر Start Menu و حذف‌کننده؛ مناسب اجرای خودکار. |
-| `PersianTypoFixer-v1.3.0-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
-| `PersianTypoFixer-v1.3.0-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
-| `PersianTypoFixer-v1.3.0-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
-| `PersianTypoFixer-v1.3.0-linux-amd64.deb` | نصب برنامه، آیکون و میان‌بر در فهرست برنامه‌های لینوکس. |
-| `SHA256SUMS.txt` | هش SHA-256 فایل‌ها برای بررسی یکسان بودن دانلود. |
+| سیستم‌عامل | پیش‌نیاز | دانلود |
+| --- | --- | --- |
+| **ویندوز** | ویندوز ۱۰ نسخهٔ ۱۸۰۹ یا جدیدتر و ویندوز ۱۱، معماری x64 | [نصاب EXE][windows] · [نسخهٔ مستقل][standalone] · [نسخهٔ قابل حمل][portable] |
+| **لینوکس** | Ubuntu 22.04 یا Debian 12 به بالا، معماری amd64، نشست **X11** و سینی سیستم | [بستهٔ DEB][linux] |
 
-فقط یکی از دو نسخه EXE مستقل یا پوشه‌ای را اجرا کنید. نسخه مستقل در هر اجرا
-کتابخانه‌ها را در پوشه موقت باز می‌کند؛ نسخه پوشه‌ای معمولاً سریع‌تر شروع می‌شود.
-نسخهٔ مستقل ویندوز و بستهٔ لینوکس Python را همراه دارند.
+**ویندوز.** نصاب برای کاربر جاری نصب می‌کند و میان‌بر Start Menu و گزینهٔ اجرا هنگام ورود را اضافه می‌کند. فایل EXE مستقل را می‌توانید مستقیم اجرا کنید. برای نسخهٔ قابل حمل، کل فایل ZIP را استخراج کنید و EXE داخل آن را اجرا کنید.
 
-### نصب روی لینوکس
-
-بسته برای Ubuntu 22.04 و Debian 12 یا جدیدتر با معماری amd64 تهیه شده است. در
-پوشه‌ای که فایل را دریافت کرده‌اید، دستور زیر را اجرا کنید.
+**لینوکس.** در پوشهٔ فایل دانلودشده دستور زیر را اجرا کنید. سپس **Persian Typo Fixer** را از فهرست برنامه‌ها باز کنید.
 
 ```sh
 sudo apt install ./PersianTypoFixer-v1.3.0-linux-amd64.deb
 ```
 
-از فهرست برنامه‌ها **Persian Typo Fixer** را باز کنید. برنامه به نشست **X11**
-و محیط دسکتاپ دارای سینی سیستم نیاز دارد. در نشست **Wayland** میان‌بر پشتیبانی
-نمی‌شود. تبدیل در لینوکس بر اساس چیدمان‌های استاندارد **US** و **Iranian** در XKB
-انجام می‌شود. کادر مقصد باید `Ctrl+C` و `Ctrl+V` را پشتیبانی کند.
-
-اجرای خودکار را از گزینهٔ «اجرا هنگام ورود» تنظیم کنید. به‌روزرسانی در لینوکس
-صفحهٔ انتشار را باز می‌کند تا بستهٔ تازه را با همان دستور `apt install` نصب کنید.
+بسته‌های آماده Python را همراه دارند. [هش SHA-256 فایل‌ها][checksums] و [همهٔ فایل‌های انتشار][releases] در GitHub در دسترس‌اند.
 
 ## استفاده
 
-1. فایل EXE دانلودشده یا `PersianTypoFixer.exe` داخل بسته پوشه‌ای را اجرا کنید.
-   برنامه بدون پنجره، فقط با آیکون «ف» کنار ساعت ویندوز اجرا می‌شود.
-   در صورت نیاز، بخش **Show hidden icons** را باز کنید.
-2. در برنامه مقصد، فقط متن اشتباه را در یک کادر قابل ویرایش انتخاب کنید.
-3. **Ctrl+Alt+X** را بزنید و کلیدها را رها کنید. متن در همان محل جایگزین می‌شود.
+| متن انتخاب‌شده | نتیجه |
+| --- | --- |
+| `sghl` | سلام |
+| اثممخ | `hello` |
 
-روی آیکون راست‌کلیک کنید. منو این گزینه‌ها را دارد:
+1. برنامه را باز کنید. آیکون **ف** در سینی سیستم نمایش داده می‌شود.
+2. بخش اشتباه متن را در یک کادر قابل ویرایش انتخاب کنید.
+3. میان‌بر <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>X</kbd> را بزنید و کلیدها را رها کنید.
 
-- **فعال**: با برداشتن یا گذاشتن تیک، میان‌بر غیرفعال یا فعال می‌شود.
-- **اجرا هنگام ورود به ویندوز**: اجرای خودکار را با تیک فعال یا غیرفعال کنید. این انتخاب در نصاب هم وجود دارد و پیش‌فرض نصب جدید خاموش است.
-- **بررسی به‌روزرسانی**: آخرین نسخهٔ پایدار را از GitHub Releases بررسی کنید.
-- **دربارهٔ برنامه**: نسخهٔ در حال اجرا، سازنده، مجوز MIT، سورس و لینک گزارش مشکل را ببینید.
-- **خروج**: برنامه کاملاً بسته و میان‌بر آزاد می‌شود.
+با راست‌کلیک روی آیکون، میان‌بر و اجرای خودکار را تنظیم کنید، به‌روزرسانی را بررسی کنید یا از برنامه خارج شوید. **دربارهٔ برنامه** نسخهٔ نصب‌شده، نام سازنده، مجوز و لینک سورس را نشان می‌دهد.
 
-آیکون در حالت فعال آبی و در حالت غیرفعال خاکستری است. با نگه داشتن ماوس روی
-آیکون، وضعیت و آخرین پیام برنامه دیده می‌شود. محل نمایش آیکون در بخش آشکار یا
-مخفی کنار ساعت، تابع تنظیمات ویندوز است.
+- **تبدیل دوطرفه.** در ویندوز چیدمان‌های Persian و Persian (Standard) در کنار English (US) پشتیبانی می‌شوند. در لینوکس نگاشت چیدمان‌های US و Iranian از XKB خوانده می‌شود.
+- **پردازش روی دستگاه.** متن انتخاب‌شده روی همان دستگاه اصلاح می‌شود. پس از عملیات، کلیپ‌بورد قبلی بازگردانده می‌شود و اگر در این فاصله دوباره کپی کنید، کپی تازه در اولویت است.
+- **به‌روزرسانی.** برنامه نسخهٔ پایدار را از GitHub بررسی می‌کند. ویندوز پس از تأیید شما نصاب را دانلود و SHA-256 آن را بررسی می‌کند. در لینوکس، پنجرهٔ نسخهٔ تازه شما را به بستهٔ جدید هدایت می‌کند.
 
-### به‌روزرسانی
+<details>
+<summary><strong>سازگاری و رفع مشکل میان‌بر</strong></summary>
 
-برنامه کمی بعد از اجرا و هر ۲۴ ساعت در زمان اجرا، GitHub Releases را بررسی می‌کند.
-با کلیک روی اعلان نسخهٔ تازه یا گزینهٔ «به‌روزرسانی به نسخهٔ …» در منو، توضیحات
-انتشار را می‌بینید. «دانلود و نصب» دریافت نصاب را شروع می‌کند. با «لغو دانلود»،
-دریافت متوقف و فایل نیمه‌کاره پاک می‌شود.
+برنامهٔ مقصد باید از `Ctrl+C` و `Ctrl+V` در یک کادر قابل ویرایش پشتیبانی کند. در ویندوز، برنامه‌های اجراشده با دسترسی Administrator به [سطح دسترسی یکسان برای ارسال ورودی][sendinput] نیاز دارند. در لینوکس، میان‌بر سراسری به X11 نیاز دارد.
 
-پس از تطبیق اندازه و SHA-256، برنامه بسته می‌شود، نصاب برای کاربر جاری اجرا
-می‌شود و برنامه دوباره باز می‌شود. انتخاب اجرای خودکار حفظ می‌شود. در نسخهٔ
-مستقل یا قابل حمل، این مسیر نسخهٔ نصبی را برای کاربر جاری راه‌اندازی می‌کند.
-برای دریافت این قابلیت از نسخه‌های قبل از ۱.۲.۰، نصاب تازه را یک‌بار اجرا کنید.
+اگر میان‌بر در اختیار برنامهٔ دیگری است، پس از آزاد کردن آن گزینهٔ **فعال** را در منوی آیکون بزنید. در متن ترکیبی، چیدمان با توجه به حروف غالب تشخیص داده می‌شود. انتخاب بخش کوتاه و مشخص، نتیجه را قابل پیش‌بینی‌تر می‌کند.
 
-## رفتار تبدیل
+</details>
 
-- جای کلیدها در چیدمان **English (US)** و چیدمان فارسی ویندوز تبدیل می‌شود.
-  «Persian» و «Persian (Standard)» پشتیبانی می‌شوند؛ حروف، کلیدهای Shift،
-  نشانه‌ها و اعداد مطابق همان چیدمان خوانده می‌شوند.
-- اگر زبان پنجره مقصد فارسی باشد، همان چیدمان مبناست. در حالت انگلیسی، آخرین
-  چیدمان فارسی استفاده‌شده توسط برنامه و سپس اولین چیدمان فارسی نصب‌شده انتخاب
-  می‌شود. اگر هر دو نوع فارسی نصب است، یک بار با چیدمان موردنظر اصلاح انجام دهید
-  تا برنامه آن را به خاطر بسپارد. این انتخاب تا خروج برنامه نگه داشته می‌شود.
-- جهت تبدیل بر اساس حروف تشخیص داده می‌شود، بنابراین نقطه یا فاصله ابتدای متن
-  تشخیص را خراب نمی‌کند. در متن ترکیبی، زبان غالب و در حالت مساوی، اولین حرف
-  تعیین‌کننده است. بهتر است فقط بخش اشتباه را انتخاب کنید.
-- فاصله، خط جدید، ایموجی و نویسه‌های خارج از نگاشت حفظ می‌شوند. «ي/ك» عربی نیز
-  در جهت فارسی به انگلیسی مانند «ی/ک» پذیرفته می‌شوند.
-- حروف بزرگ انگلیسی به معنای کلید Shift تفسیر می‌شوند؛ برای مثال `H` برابر «آ»
-  است. از روی متن به‌تنهایی نمی‌توان اثر Caps Lock را از Shift تشخیص داد یا بزرگی
-  حروف اصلی انگلیسی را بازیابی کرد.
-- محتوای قبلی کلیپ‌بورد، شامل متن قالب‌دار، تصویر و فایل‌های کپی‌شده، پس از
-  عملیات بازگردانده می‌شود. اگر در این فاصله کپی جدیدی انجام دهید، کپی جدید حفظ می‌شود.
-- تغییر پنجره یا کادر مقصد، تکرار میان‌بر هنگام عملیات، نبودن انتخاب و خطای کپی
-  باعث جایگزینی متن در مقصد دیگری نمی‌شوند.
+## فناوری‌ها
 
-برنامه مقصد باید از **Ctrl+C / Ctrl+V** در کادر قابل ویرایش پشتیبانی کند.
-متن در برنامه‌های فقط‌خواندنی قابل جایگزینی نیست. اگر مقصد با دسترسی Administrator
-اجرا شده باشد، برای آن مقصد این برنامه هم به همان سطح دسترسی نیاز دارد؛ این
-محدودیت [ارسال ورودی در ویندوز](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput) است.
-خطای ثبت میان‌بر ممکن است به دلیل اجرای نسخه دیگری از برنامه یا اشغال بودن
-`Ctrl+Alt+X` باشد؛ پس از رفع تداخل، از منوی آیکون گزینه «فعال» را بزنید.
+[![Python][python-badge]][python]
+[![PySide6 Essentials][pyside-badge]][pyside]
+[![Python Xlib][xlib-badge]][xlib]
+[![PyInstaller][pyinstaller-badge]][pyinstaller]
+[![Inno Setup][inno-badge]][inno]
 
-## حریم خصوصی
+| فناوری | کاربرد |
+| --- | --- |
+| **Python و PySide6 Essentials** | منوی سینی سیستم، پنجره‌ها و کلیپ‌بورد مشترک بین دو نسخه |
+| **Win32 API** | ثبت میان‌بر سراسری و ارسال ورودی در ویندوز |
+| **Python Xlib و XKB** | میان‌بر، کلیپ‌بورد و خواندن چیدمان در لینوکس X11 |
+| **PyInstaller** | بسته‌بندی برنامه و وابستگی‌ها برای هر دو سیستم‌عامل |
+| **Inno Setup و dpkg-deb** | ساخت نصاب EXE ویندوز و بستهٔ DEB لینوکس |
 
-تبدیل متن کاملاً روی همان کامپیوتر انجام می‌شود. برنامه متن را به اینترنت
-نمی‌فرستد، تایپ عادی را پایش نمی‌کند و متن انتخاب‌شده را در فایل یا لاگ ذخیره
-نمی‌کند. کلیپ‌بورد فقط برای کپی و جایگزینی همان انتخاب استفاده می‌شود.
+## توسعه و ساخت
 
-## اجرای سورس
+نسخهٔ Python مورد استفاده در CI، **3.11** است. نسخهٔ بسته‌ها در [requirements.txt](requirements.txt) و [requirements-build.txt](requirements-build.txt) ثبت شده است.
 
-برای توسعه و ساخت انتشار از Python 3.11 نسخه ۶۴ بیتی استفاده کنید:
+<details>
+<summary><strong>ویندوز</strong></summary>
+
+برای اجرای سورس و تست‌ها در PowerShell:
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 .\.venv\Scripts\python.exe main.py
 ```
 
-## تست و ساخت نسخه اجرایی
+برای ساخت نصاب، Inno Setup 6.7.4 یا جدیدتر را نصب کنید. اگر کامپایلر به‌طور خودکار پیدا نشد، مسیر کامل `ISCC.exe` را در متغیر `ISCC` قرار دهید. بعد از خروج از برنامه، `.\build.bat` را اجرا کنید. فایل‌های انتشار در `dist\release` و نسخهٔ پوشه‌ای در `dist\PersianTypoFixer` ساخته می‌شوند.
 
-برای ساخت نصاب، Inno Setup 6.7.4 یا جدیدتر را نصب کنید یا متغیر `ISCC` را به مسیر کامل `ISCC.exe` تنظیم کنید.
+`tests/native_hotkey_smoke.py` میان‌بر واقعی را بررسی می‌کند و `tools/smoke_release.py` برای آزمون نسخهٔ مستقل، ZIP و هش‌هاست. هنگام اجرای این آزمون‌ها نمونهٔ در حال اجرای برنامه را ببندید.
 
-پیش از ساخت، از نسخه در حال اجرای برنامه با گزینه «خروج» خارج شوید تا فایل
-اجرایی قبلی توسط ویندوز قفل نباشد.
+</details>
 
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\build.bat
+<details>
+<summary><strong>لینوکس X11</strong></summary>
+
+ابتدا وابستگی‌های سیستمی بخش نصب را از [گردش‌کار لینوکس][linux-workflow] فراهم کنید. برای اجرای سورس، ساخت بسته و آزمودن آن:
+
+```sh
+python3.11 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-build.txt
+python main.py
 ```
 
-برای آزمون تکمیلی ثبت و دریافت رویداد واقعی میان‌بر در ویندوز:
+پس از خروج از برنامه:
 
-```powershell
-.\.venv\Scripts\python.exe tests\native_hotkey_smoke.py
+```sh
+python -m PyInstaller --noconfirm --clean packaging/linux.spec
+python tools/package_linux.py
+sudo apt install ./dist/release/PersianTypoFixer-v1.3.0-linux-amd64.deb
+xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
+  python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
 ```
 
-پس از ساخت، برای بررسی EXE مستقل در یک پوشه خالی، اجرای نسخه داخل ZIP و هش‌ها:
+</details>
 
-```powershell
-.\build\.venv\Scripts\python.exe tools\smoke_release.py
-```
-
-این آزمون را هنگام بسته بودن نسخه دیگری از برنامه اجرا کنید. آزمون پنجره‌ای
-نشان نمی‌دهد و هیچ کلیدی به برنامه‌های دیگر نمی‌فرستد؛ در sandbox محدود ممکن
-است ثبت میان‌بر مجاز نباشد.
-
-`build.bat` وابستگی‌ها را نصب می‌کند، تست‌ها را اجرا می‌کند و فقط در صورت موفقیت،
-با PyInstaller خروجی می‌سازد. محیط ساخت مستقل در `build\.venv` ساخته می‌شود؛
-نسخه وابستگی‌ها در `requirements-build.txt` و `requirements.txt` مشخص است.
-خروجی نهایی آماده انتشار:
-
-```text
-dist\release\
-  PersianTypoFixer-v1.3.0-windows-x64-setup.exe
-  PersianTypoFixer-v1.3.0-windows-x64.exe
-  PersianTypoFixer-v1.3.0-windows-x64-portable.zip
-  PersianTypoFixer-v1.3.0-windows-x64-notices.zip
-  SHA256SUMS.txt
-```
-
-نسخه پوشه‌ای اولیه نیز در `dist\PersianTypoFixer` موجود است و باید همراه
-تمام فایل‌هایش منتقل شود. **EXE مستقل موجود در `dist\release` به‌تنهایی قابل
-اجراست.** پوشه‌های ساخت، محیط مجازی و خروجی اجرایی وارد Git نمی‌شوند.
-
-برای بررسی هش فایل دانلودشده در PowerShell:
-
-```powershell
-Get-FileHash .\PersianTypoFixer-v1.3.0-windows-x64.exe -Algorithm SHA256
-```
-
-خروجی را با `SHA256SUMS.txt` همان انتشار مقایسه کنید. GitHub Actions نیز روی
-ویندوز، تست و ساخت خروجی را انجام می‌دهد. ذخیره بسته‌ها در Artifacts اختیاری
-است: در اجرای دستی workflow، گزینه `upload_artifacts` را فعال کنید؛ این قابلیت
-به فضای آزاد سهمیه Actions حساب نیاز دارد. فایل‌های آماده استفاده در بخش Releases
-ارائه می‌شوند. برای تغییر نسخه، `VERSION` در `app_version.py` را به‌روز کنید؛
-یادداشت انتشار در [CHANGELOG.md](CHANGELOG.md) نگهداری می‌شود.
-
-فایل spec هنگام ساخت، کتابخانه‌های سیستمی ویندوز را بر DLLهای هم‌نام برنامه‌های
-دیگر در PATH مقدم می‌کند؛ این کار از وارد شدن نسخه ناسازگار ICU به خروجی و
-خطای شروع Qt جلوگیری می‌کند. نسخه Qt 6.12 همچنان از
-[ویندوز ۱۰ نسخه ۱۸۰۹ و جدیدتر](https://doc.qt.io/qt-6.12/windows.html) پشتیبانی می‌کند.
-
-میان‌بر با [RegisterHotKey](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey)
-و بدون hook عمومی صفحه‌کلید ثبت می‌شود. تمام مراحل کلیپ‌بورد و تبدیل در حلقه
-رویداد Qt و با تایمر انجام می‌شوند؛ برنامه تایپ عادی کاربر را پایش یا ذخیره نمی‌کند.
+GitHub Actions بستهٔ ویندوز را می‌سازد، بستهٔ لینوکس را در Xvfb نصب و آزمایش می‌کند و فایل‌های وب‌سایت را بررسی می‌کند. در اجرای دستی ساخت، گزینهٔ `upload_artifacts` فایل‌ها را به Artifacts اضافه می‌کند.
 
 ## مجوز و مشارکت
 
-کد پروژه تحت [مجوز MIT](LICENSE) منتشر می‌شود. مجوز کتابخانه‌های همراه و
-مسیر دریافت سورس آن‌ها در [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
-آمده است؛ Qt و PySide6 تحت LGPLv3 استفاده می‌شوند. نسخه پوشه‌ای و دستورهای ساخت
-برای جایگزینی کتابخانه‌ها نیز ارائه شده‌اند.
+ساختهٔ **Seyed Mohammad Saleh Ghotbani**. کد پروژه با [مجوز MIT](LICENSE) منتشر می‌شود. مجوز و سورس وابستگی‌ها در [اعلان‌های نرم‌افزارهای ثالث](THIRD_PARTY_NOTICES.md) آمده است. برای ارسال تغییرات، [راهنمای مشارکت](CONTRIBUTING.md) را ببینید.
 
-برای گزارش مشکل یا مشارکت، [راهنمای مشارکت](CONTRIBUTING.md) را ببینید.
+</div>
 
-نصب در `%LOCALAPPDATA%\Programs\PersianTypoFixer` انجام می‌شود. تنظیم اجرای خودکار فقط برای کاربر جاری است و با حذف نصب پاک می‌شود. نسخه portable را پس از فعال کردن اجرای خودکار جابه‌جا نکنید؛ اگر مسیر تغییر کرد، گزینه را خاموش و دوباره روشن کنید.
+[website]: https://persiantypefixer.ghotbani.ir/
+[issues]: https://github.com/salehghotbani/PersianTypeFixer/issues
+[releases]: https://github.com/salehghotbani/PersianTypeFixer/releases/latest
+[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64-setup.exe
+[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64.exe
+[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64-portable.zip
+[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-linux-amd64.deb
+[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/SHA256SUMS.txt
+[release-badge]: https://img.shields.io/github/v/release/salehghotbani/PersianTypeFixer?label=Release&color=2454e6
+[windows-badge]: https://img.shields.io/badge/Windows-x64-2563eb
+[linux-badge]: https://img.shields.io/badge/Linux-X11%20%7C%20amd64-16836b?logo=linux&logoColor=white
+[license-badge]: https://img.shields.io/badge/License-MIT-475569
+[windows-workflow]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/windows.yml
+[linux-workflow]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/linux.yml
+[site-workflow]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/site-check.yml
+[windows-ci]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/windows.yml/badge.svg?branch=main&event=push
+[linux-ci]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/linux.yml/badge.svg?branch=main&event=push
+[site-ci]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/site-check.yml/badge.svg?branch=main&event=push
+[python-badge]: https://img.shields.io/badge/Python-3.11-3776ab?logo=python&logoColor=white
+[pyside-badge]: https://img.shields.io/badge/PySide6_Essentials-6.12.0-167a4b?logo=qt&logoColor=white
+[xlib-badge]: https://img.shields.io/badge/Python_Xlib-0.33-475569
+[pyinstaller-badge]: https://img.shields.io/badge/PyInstaller-6.22.3-345d9d
+[inno-badge]: https://img.shields.io/badge/Inno_Setup-6.7.4-475569
+[python]: https://www.python.org/
+[pyside]: https://doc.qt.io/qtforpython-6/
+[xlib]: https://github.com/python-xlib/python-xlib
+[pyinstaller]: https://pyinstaller.org/
+[inno]: https://jrsoftware.org/isinfo.php
+[sendinput]: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput
