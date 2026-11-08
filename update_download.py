@@ -101,6 +101,7 @@ class UpdateClient(QObject):
         self.reply = None
         self.download = None
         self.metadata = bytearray()
+        self.redirects_left = 0
 
     def check(self):
         self.request(LATEST_RELEASE)
@@ -111,6 +112,7 @@ class UpdateClient(QObject):
         except OSError:
             self.failed.emit("ساخت فایل موقت برای دانلود ممکن نشد.")
             return
+        self.redirects_left = 5
         self.request(release.url)
 
     def request(self, url):
@@ -121,7 +123,7 @@ class UpdateClient(QObject):
         request.setTransferTimeout(20000)
         request.setMaximumRedirectsAllowed(5)
         if self.download:
-            request.setAttribute(QNetworkRequest.RedirectPolicyAttribute, QNetworkRequest.UserVerifiedRedirectPolicy)
+            request.setAttribute(QNetworkRequest.RedirectPolicyAttribute, QNetworkRequest.ManualRedirectPolicy)
         else:
             request.setRawHeader(b"Accept", b"application/vnd.github+json")
             request.setAttribute(QNetworkRequest.RedirectPolicyAttribute, QNetworkRequest.SameOriginRedirectPolicy)
@@ -129,25 +131,15 @@ class UpdateClient(QObject):
         reply.setReadBufferSize(CHUNK)
         reply.readyRead.connect(self.read)
         reply.finished.connect(self.finish)
-        if self.download:
-            reply.redirected.connect(self.allow_redirect)
-
-    def allow_redirect(self, url):
-        reply = self.sender()
-        if reply is not self.reply:
-            return
-        url = reply.url().resolved(url)
-        if (url.scheme() == "https" and url.host() in DOWNLOAD_HOSTS
-                and url.port(443) == 443 and not url.userInfo()):
-            reply.redirectAllowed.emit()
-        else:
-            self.fail("آدرس دانلود GitHub معتبر نیست.")
 
     def read(self):
         self.drain(self.sender())
 
     def drain(self, reply):
-        if reply is not self.reply or reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) != 200:
+        if reply is not self.reply:
+            return
+        if reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) != 200:
+            reply.readAll()
             return
         try:
             while reply.bytesAvailable():
@@ -169,6 +161,17 @@ class UpdateClient(QObject):
     def finish(self):
         reply = self.sender()
         if reply is not self.reply:
+            return
+        redirect = reply.attribute(QNetworkRequest.RedirectionTargetAttribute)
+        if self.download and redirect and reply.error() == QNetworkReply.NoError:
+            url = reply.url().resolved(redirect)
+            if (self.redirects_left and url.scheme() == "https" and url.host() in DOWNLOAD_HOSTS
+                    and url.port(443) == 443 and not url.userInfo()):
+                self.redirects_left -= 1
+                reply.deleteLater()
+                self.request(url)
+            else:
+                self.fail("آدرس دانلود GitHub معتبر نیست.")
             return
         if reply.error() != QNetworkReply.NoError or reply.attribute(QNetworkRequest.HttpStatusCodeAttribute) != 200:
             self.fail("ارتباط با GitHub برقرار نشد. بعداً دوباره امتحان کنید.")
