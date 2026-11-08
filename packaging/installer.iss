@@ -46,8 +46,14 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Run]
 Filename: "{app}\PersianTypoFixer.exe"; Description: "Run Persian Typo Fixer"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\PersianTypoFixer.exe"; Flags: nowait skipifnotsilent; Check: IsAppUpdate
 
 [Code]
+function IsAppUpdate(): Boolean;
+begin
+  Result := ExpandConstant('{param:PTFUPDATE|0}') = '1';
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if (CurStep = ssPostInstall) and not WizardIsTaskSelected('autostart') then

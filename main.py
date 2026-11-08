@@ -12,6 +12,7 @@ from app_version import VERSION
 from single_instance import SingleInstance
 from startup import StartupPreference
 from selection_conversion import QtClipboard, SelectionConverter
+from tray_updates import TrayUpdates
 from windows_api import HotkeyFilter, WindowsAPI
 
 
@@ -55,6 +56,7 @@ class TrayApplication(QObject):
         self.last_status = ""
         self.startup = StartupPreference()
         self.create_tray()
+        self.updates = TrayUpdates(self)
         self.converter = SelectionConverter(
             self.native, QtClipboard(QApplication.clipboard()), self
         )
@@ -146,6 +148,7 @@ class TrayApplication(QObject):
 
     def exit_application(self):
         self.quitting = True
+        self.updates.stop()
         self.set_enabled(False)
         # Let an already queued paste consume the clipboard before exiting.
         if not self.converter.busy:
@@ -159,6 +162,7 @@ class TrayApplication(QObject):
         if self.cleaned_up:
             return
         self.cleaned_up = True
+        self.updates.stop()
         self.converter.cancel(force=True)
         try:
             self.native.unregister_hotkey()
