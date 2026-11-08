@@ -14,17 +14,17 @@
 
 ## دریافت نسخه آماده
 
-**[دانلود نصاب نسخه 1.1.1 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.1.1/PersianTypoFixer-v1.1.1-windows-x64-setup.exe)**
+**[دانلود نصاب نسخه 1.2.0 برای ویندوز ۶۴ بیتی](https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.2.0/PersianTypoFixer-v1.2.0-windows-x64-setup.exe)**
 
 [صفحه آخرین انتشار](https://github.com/salehghotbani/PersianTypeFixer/releases/latest)
 شامل این فایل‌هاست:
 
 | فایل | کاربرد |
 | --- | --- |
-| `PersianTypoFixer-v1.1.1-windows-x64-setup.exe` | نصب برای کاربر جاری، میان‌بر Start Menu و حذف‌کننده؛ مناسب اجرای خودکار. |
-| `PersianTypoFixer-v1.1.1-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
-| `PersianTypoFixer-v1.1.1-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
-| `PersianTypoFixer-v1.1.1-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
+| `PersianTypoFixer-v1.2.0-windows-x64-setup.exe` | نصب برای کاربر جاری، میان‌بر Start Menu و حذف‌کننده؛ مناسب اجرای خودکار. |
+| `PersianTypoFixer-v1.2.0-windows-x64.exe` | فایل مستقل؛ بدون نصب Python و بدون فایل جانبی اجرا می‌شود. |
+| `PersianTypoFixer-v1.2.0-windows-x64-portable.zip` | نسخه پوشه‌ای قابل حمل؛ کل پوشه را استخراج و EXE داخل آن را اجرا کنید. |
+| `PersianTypoFixer-v1.2.0-windows-x64-notices.zip` | راهنمای فارسی، مجوزها و مشخصات وابستگی‌های همان ساخت. |
 | `SHA256SUMS.txt` | هش SHA-256 فایل‌ها برای بررسی یکسان بودن دانلود. |
 
 فقط یکی از دو نسخه EXE مستقل یا پوشه‌ای را اجرا کنید. نسخه مستقل در هر اجرا
@@ -43,12 +43,24 @@
 
 - **فعال**: با برداشتن یا گذاشتن تیک، میان‌بر غیرفعال یا فعال می‌شود.
 - **اجرا هنگام ورود به ویندوز**: اجرای خودکار را با تیک فعال یا غیرفعال کنید. این انتخاب در نصاب هم وجود دارد و پیش‌فرض نصب جدید خاموش است.
+- **بررسی به‌روزرسانی**: آخرین نسخهٔ پایدار را از GitHub Releases بررسی کنید.
 - **خروج**: برنامه کاملاً بسته و میان‌بر آزاد می‌شود.
 
 آیکون در حالت فعال آبی و در حالت غیرفعال خاکستری است. با نگه داشتن ماوس روی
-آیکون، وضعیت و آخرین پیام برنامه دیده می‌شود. کلیک یا دوبارکلیک هیچ پنجره‌ای
-باز نمی‌کند و هیچ ورودی در نوار وظیفه ایجاد نمی‌شود. محل نمایش آیکون در بخش
-آشکار یا مخفی کنار ساعت، تابع تنظیمات ویندوز است.
+آیکون، وضعیت و آخرین پیام برنامه دیده می‌شود. محل نمایش آیکون در بخش آشکار یا
+مخفی کنار ساعت، تابع تنظیمات ویندوز است.
+
+### به‌روزرسانی
+
+برنامه کمی بعد از اجرا و هر ۲۴ ساعت در زمان اجرا، GitHub Releases را بررسی می‌کند.
+با کلیک روی اعلان نسخهٔ تازه یا گزینهٔ «به‌روزرسانی به نسخهٔ …» در منو، توضیحات
+انتشار را می‌بینید. «دانلود و نصب» دریافت نصاب را شروع می‌کند. با «لغو دانلود»،
+دریافت متوقف و فایل نیمه‌کاره پاک می‌شود.
+
+پس از تطبیق اندازه و SHA-256، برنامه بسته می‌شود، نصاب برای کاربر جاری اجرا
+می‌شود و برنامه دوباره باز می‌شود. انتخاب اجرای خودکار حفظ می‌شود. در نسخهٔ
+مستقل یا قابل حمل، این مسیر نسخهٔ نصبی را برای کاربر جاری راه‌اندازی می‌کند.
+برای دریافت این قابلیت از نسخه‌های قبل از ۱.۲.۰، نصاب تازه را یک‌بار اجرا کنید.
 
 ## رفتار تبدیل
 
@@ -130,10 +142,10 @@ py -3.11 -m venv .venv
 
 ```text
 dist\release\
-  PersianTypoFixer-v1.1.1-windows-x64-setup.exe
-  PersianTypoFixer-v1.1.1-windows-x64.exe
-  PersianTypoFixer-v1.1.1-windows-x64-portable.zip
-  PersianTypoFixer-v1.1.1-windows-x64-notices.zip
+  PersianTypoFixer-v1.2.0-windows-x64-setup.exe
+  PersianTypoFixer-v1.2.0-windows-x64.exe
+  PersianTypoFixer-v1.2.0-windows-x64-portable.zip
+  PersianTypoFixer-v1.2.0-windows-x64-notices.zip
   SHA256SUMS.txt
 ```
 
@@ -144,7 +156,7 @@ dist\release\
 برای بررسی هش فایل دانلودشده در PowerShell:
 
 ```powershell
-Get-FileHash .\PersianTypoFixer-v1.1.1-windows-x64.exe -Algorithm SHA256
+Get-FileHash .\PersianTypoFixer-v1.2.0-windows-x64.exe -Algorithm SHA256
 ```
 
 خروجی را با `SHA256SUMS.txt` همان انتشار مقایسه کنید. GitHub Actions نیز روی

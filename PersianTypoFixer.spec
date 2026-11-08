@@ -44,12 +44,13 @@ a = Analysis(
     datas=[(str(root / name), '.') for name in
            ('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md')]
           + [(str(root / 'licenses'), 'licenses'),
+             (str(root / 'packaging/install_update.ps1'), 'packaging'),
              (str(root / 'build/assets/build-info.json'), '.')],
     hiddenimports=['PySide6.support.deprecated'],
     hookspath=[str(root / 'packaging/hooks')],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['PySide6.QtNetwork', 'PySide6.QtQml', 'PySide6.QtQuick',
+    excludes=['PySide6.QtQml', 'PySide6.QtQuick',
               'PySide6.QtPdf', 'PySide6.QtOpenGL'],
     noarchive=False,
     optimize=0,
@@ -57,7 +58,9 @@ a = Analysis(
 # The tray icon uses raster painting; the optional software OpenGL renderer
 # is not needed and would add a separate third-party graphics runtime.
 a.binaries = [entry for entry in a.binaries
-              if Path(entry[0]).name.lower() != 'opengl32sw.dll']
+              if Path(entry[0]).name.lower() != 'opengl32sw.dll'
+              and ('/plugins/tls/' not in entry[0].replace('\\', '/')
+                   or Path(entry[0]).name.lower() == 'qschannelbackend.dll')]
 pyz = PYZ(a.pure)
 
 exe = EXE(
