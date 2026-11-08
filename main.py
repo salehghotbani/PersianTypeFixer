@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QApplication, QMenu, QProxyStyle, QStyle, QStyleOptionMenuItem, QSystemTrayIcon,
 )
 
-from about_dialog import show_about
 from app_version import APP_NAME, VERSION
 from selection_conversion import QtClipboard, SelectionConverter
 from tray_updates import TrayUpdates
@@ -67,7 +66,7 @@ class TrayApplication(QObject):
         self.create_tray()
         self.updates = TrayUpdates(self)
         about_action = QAction("دربارهٔ برنامه", self)
-        about_action.triggered.connect(lambda: show_about(self.create_app_icon(True)))
+        about_action.triggered.connect(self.open_about)
         self.menu.insertAction(self.menu.actions()[-1], about_action)
         self.converter = SelectionConverter(
             self.native, QtClipboard(QApplication.clipboard()), self
@@ -93,15 +92,19 @@ class TrayApplication(QObject):
         self.toggle_action.setCheckable(True)
         self.toggle_action.triggered.connect(self.toggle_enabled)
         self.menu.addAction(self.toggle_action)
-        self.startup_action = QAction("اجرا هنگام ورود" if LINUX else "اجرا هنگام ورود به ویندوز", self)
+        self.startup_action = QAction("اجرا هنگام روشن کردن سیستم", self)
         self.startup_action.setCheckable(True)
         self.startup_action.triggered.connect(self.toggle_startup)
         self.menu.addAction(self.startup_action)
         self.menu.aboutToShow.connect(self.refresh_startup)
-        self.refresh_startup()
         self.menu.addSeparator()
         self.menu.addAction("خروج", self.exit_application)
         self.tray.setContextMenu(self.menu)
+
+    def open_about(self):
+        from about_dialog import show_about
+
+        show_about(self.create_app_icon(True))
 
     @staticmethod
     def create_app_icon(enabled):
@@ -214,7 +217,7 @@ def main():
                 print("Persian Typo Fixer requires the Qt X11 (xcb) platform.", file=sys.stderr)
                 return 1
         controller = TrayApplication()
-        app.setWindowIcon(controller.create_app_icon(True))
+        app.setWindowIcon(controller.tray.icon())
         controller.tray.show()
         if "--update-install-failed" in sys.argv:
             QTimer.singleShot(0, lambda: show_update_message(

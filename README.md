@@ -29,12 +29,12 @@
 | **ویندوز** | ویندوز ۱۰ نسخهٔ ۱۸۰۹ یا جدیدتر و ویندوز ۱۱، معماری x64 | [نصاب EXE][windows] · [نسخهٔ مستقل][standalone] · [نسخهٔ قابل حمل][portable] |
 | **لینوکس** | Ubuntu 22.04 یا Debian 12 به بالا، معماری amd64، نشست **X11** و سینی سیستم | [بستهٔ DEB][linux] |
 
-**ویندوز.** نصاب برای کاربر جاری نصب می‌کند و میان‌بر Start Menu و گزینهٔ اجرا هنگام ورود را اضافه می‌کند. فایل EXE مستقل را می‌توانید مستقیم اجرا کنید. برای نسخهٔ قابل حمل، کل فایل ZIP را استخراج کنید و EXE داخل آن را اجرا کنید.
+**ویندوز.** نصاب برای کاربر جاری نصب می‌کند و میان‌بر Start Menu و گزینهٔ «اجرا هنگام روشن کردن سیستم» را اضافه می‌کند. فایل EXE مستقل را می‌توانید مستقیم اجرا کنید. برای نسخهٔ قابل حمل، کل فایل ZIP را استخراج کنید و EXE داخل آن را اجرا کنید.
 
 **لینوکس.** در پوشهٔ فایل دانلودشده دستور زیر را اجرا کنید. سپس **Persian Typo Fixer** را از فهرست برنامه‌ها باز کنید.
 
 ```sh
-sudo apt install ./PersianTypoFixer-v1.3.0-linux-amd64.deb
+sudo apt install ./PersianTypoFixer-v1.3.1-linux-amd64.deb
 ```
 
 بسته‌های آماده Python را همراه دارند. [هش SHA-256 فایل‌ها][checksums] و [همهٔ فایل‌های انتشار][releases] در GitHub در دسترس‌اند.
@@ -50,10 +50,11 @@ sudo apt install ./PersianTypoFixer-v1.3.0-linux-amd64.deb
 2. بخش اشتباه متن را در یک کادر قابل ویرایش انتخاب کنید.
 3. میان‌بر <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>X</kbd> را بزنید و کلیدها را رها کنید.
 
-با راست‌کلیک روی آیکون، میان‌بر و اجرای خودکار را تنظیم کنید، به‌روزرسانی را بررسی کنید یا از برنامه خارج شوید. **دربارهٔ برنامه** نسخهٔ نصب‌شده، نام سازنده، مجوز و لینک سورس را نشان می‌دهد.
+با راست‌کلیک روی آیکون، میان‌بر و گزینهٔ **«اجرا هنگام روشن کردن سیستم»** را تنظیم کنید، به‌روزرسانی را بررسی کنید یا از برنامه خارج شوید. با فعال کردن این گزینه، برنامه پس از ورود به حساب کاربری اجرا می‌شود. **دربارهٔ برنامه** نسخهٔ نصب‌شده، نام سازنده، مجوز و لینک سورس را نشان می‌دهد.
 
 - **تبدیل دوطرفه.** در ویندوز چیدمان‌های Persian و Persian (Standard) در کنار English (US) پشتیبانی می‌شوند. در لینوکس نگاشت چیدمان‌های US و Iranian از XKB خوانده می‌شود.
 - **پردازش روی دستگاه.** متن انتخاب‌شده روی همان دستگاه اصلاح می‌شود. پس از عملیات، کلیپ‌بورد قبلی بازگردانده می‌شود و اگر در این فاصله دوباره کپی کنید، کپی تازه در اولویت است.
+- **شروع سبک.** میان‌بر از آغاز اجرا آماده است. اولین بررسی خودکار نسخه دو دقیقه بعد انجام می‌شود و بخش شبکه فقط هنگام بررسی یا دانلود فعال است. بررسی دستی فوری است.
 - **به‌روزرسانی.** برنامه نسخهٔ پایدار را از GitHub بررسی می‌کند. ویندوز پس از تأیید شما نصاب را دانلود و SHA-256 آن را بررسی می‌کند. در لینوکس، پنجرهٔ نسخهٔ تازه شما را به بستهٔ جدید هدایت می‌کند.
 
 <details>
@@ -120,7 +121,7 @@ python main.py
 ```sh
 python -m PyInstaller --noconfirm --clean packaging/linux.spec
 python tools/package_linux.py
-sudo apt install ./dist/release/PersianTypoFixer-v1.3.0-linux-amd64.deb
+sudo apt install ./dist/release/PersianTypoFixer-v1.3.1-linux-amd64.deb
 xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
   python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
 ```
@@ -138,11 +139,11 @@ GitHub Actions بستهٔ ویندوز را می‌سازد، بستهٔ لین�
 [website]: https://persiantypefixer.ghotbani.ir/
 [issues]: https://github.com/salehghotbani/PersianTypeFixer/issues
 [releases]: https://github.com/salehghotbani/PersianTypeFixer/releases/latest
-[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64-setup.exe
-[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64.exe
-[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-windows-x64-portable.zip
-[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/PersianTypoFixer-v1.3.0-linux-amd64.deb
-[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.0/SHA256SUMS.txt
+[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.1/PersianTypoFixer-v1.3.1-windows-x64-setup.exe
+[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.1/PersianTypoFixer-v1.3.1-windows-x64.exe
+[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.1/PersianTypoFixer-v1.3.1-windows-x64-portable.zip
+[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.1/PersianTypoFixer-v1.3.1-linux-amd64.deb
+[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.3.1/SHA256SUMS.txt
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/PersianTypeFixer?label=Release&color=2454e6
 [windows-badge]: https://img.shields.io/badge/Windows-x64-2563eb
 [linux-badge]: https://img.shields.io/badge/Linux-X11%20%7C%20amd64-16836b?logo=linux&logoColor=white

@@ -1,4 +1,4 @@
-#ifndef AppVersion
+﻿#ifndef AppVersion
   #error AppVersion is required
 #endif
 #define Publisher "Seyed Mohammad Saleh Ghotbani"
@@ -36,7 +36,7 @@ RestartApplications=no
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "autostart"; Description: "Run Persian Typo Fixer when I sign in to Windows"; Flags: unchecked
+Name: "autostart"; Description: "اجرا هنگام روشن کردن سیستم"; Flags: unchecked
 
 [Files]
 Source: "..\dist\PersianTypoFixer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

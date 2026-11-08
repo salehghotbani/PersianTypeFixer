@@ -13,10 +13,10 @@ from PySide6.QtGui import QAction, QDesktopServices
 from PySide6.QtWidgets import QDialog
 
 from app_version import PROJECT_URL, VERSION
-from update_download import UpdateClient
 from update_dialogs import DownloadDialog, release_dialog, show_update_message
 
 CHECK_INTERVAL = 24 * 60 * 60 * 1000
+INITIAL_CHECK_DELAY = 2 * 60 * 1000
 CHECK_LABEL = "بررسی به‌روزرسانی"
 
 
@@ -54,11 +54,7 @@ class TrayUpdates(QObject):
     def __init__(self, controller):
         super().__init__(controller)
         self.controller = controller
-        self.client = UpdateClient(VERSION, self)
-        self.client.checked.connect(self.checked)
-        self.client.failed.connect(self.failed)
-        self.client.progress.connect(self.progress)
-        self.client.downloaded.connect(self.install)
+        self.client = None
         self.release = None
         self.manual = False
         self.details_dialog = None
@@ -75,17 +71,34 @@ class TrayUpdates(QObject):
         self.timer = QTimer(self, interval=CHECK_INTERVAL)
         self.timer.timeout.connect(self.check)
         self.timer.start()
-        self.initial_check = QTimer(self, interval=10000, singleShot=True)
+        self.initial_check = QTimer(self, interval=INITIAL_CHECK_DELAY, singleShot=True)
         self.initial_check.timeout.connect(self.check)
         self.initial_check.start()
 
+    def start_client(self):
+        from update_download import UpdateClient
+
+        client = self.client = UpdateClient(VERSION, self)
+        client.checked.connect(self.checked)
+        client.failed.connect(self.failed)
+        client.progress.connect(self.progress)
+        client.downloaded.connect(self.install)
+        return client
+
+    def stop_client(self):
+        if self.client is not None:
+            client, self.client = self.client, None
+            client.cancel()
+            client.deleteLater()
+
     def check(self, manual=False):
-        if self.client.reply or self.details_dialog or self.progress_dialog or self.controller.quitting:
+        if self.client is not None or self.details_dialog or self.progress_dialog or self.controller.quitting:
             return
+        self.initial_check.stop()
         self.manual = manual
         self.action.setEnabled(False)
         self.action.setText("در حال بررسی به‌روزرسانی…")
-        self.client.check()
+        self.start_client().check()
 
     def restore_action(self):
         self.action.setText(CHECK_LABEL)
@@ -95,6 +108,7 @@ class TrayUpdates(QObject):
             self.available_action.setText(f"به‌روزرسانی به نسخهٔ {self.release.version}")
 
     def checked(self, release):
+        self.stop_client()
         previous = self.release
         self.release = release
         self.restore_action()
@@ -107,7 +121,7 @@ class TrayUpdates(QObject):
             show_update_message("نسخهٔ نصب‌شده به‌روز است.")
 
     def show_details(self):
-        if not self.release or self.client.reply or self.progress_dialog or self.controller.quitting:
+        if not self.release or self.client is not None or self.progress_dialog or self.controller.quitting:
             return
         if not self.details_dialog:
             dialog = self.details_dialog = release_dialog(self.release, linux=sys.platform.startswith("linux"))
@@ -131,7 +145,7 @@ class TrayUpdates(QObject):
         dialog = self.progress_dialog = DownloadDialog(self.release)
         dialog.rejected.connect(self.cancel_download)
         dialog.show()
-        self.client.start_download(self.release)
+        self.start_client().start_download(self.release)
 
     def progress(self, received, total):
         if self.progress_dialog:
@@ -144,11 +158,12 @@ class TrayUpdates(QObject):
             dialog.deleteLater()
 
     def cancel_download(self):
-        self.client.cancel()
+        self.stop_client()
         self.close_progress()
         self.restore_action()
 
     def failed(self, message):
+        self.stop_client()
         report = self.manual or self.progress_dialog is not None
         self.close_progress()
         self.restore_action()
@@ -156,6 +171,7 @@ class TrayUpdates(QObject):
             show_update_message(message, warning=True)
 
     def install(self, download):
+        self.stop_client()
         self.close_progress()
         try:
             launch_installer(download.path, self.controller.startup.is_enabled())
@@ -171,7 +187,7 @@ class TrayUpdates(QObject):
     def stop(self):
         self.initial_check.stop()
         self.timer.stop()
-        self.client.cancel()
+        self.stop_client()
         self.close_progress()
         if self.details_dialog:
             self.details_dialog.reject()
