@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>اصلاح تایپ فارسی و انگلیسی با یک میان‌بر | Persian Typo Fixer</title>
   <meta name="description" content="متن را با زبان اشتباه تایپ کرده‌اید؟ Persian Typo Fixer متن انتخاب‌شده را با Ctrl+Alt+X بین فارسی و انگلیسی اصلاح می‌کند. دانلود رایگان نصاب ویندوز.">
-  <meta name="theme-color" content="#2454e6">
+  <meta name="theme-color" content="#ffffff">
   <meta name="robots" content="index,follow,max-image-preview:large">
   <link rel="canonical" href="https://persiantypefixer.ghotbani.ir/">
   <meta property="og:type" content="website">
@@ -24,9 +24,16 @@
   <meta name="twitter:image" content="https://persiantypefixer.ghotbani.ir/assets/social.png">
   <meta name="twitter:image:alt" content="تبدیل sghl به سلام با میان‌بر Ctrl+Alt+X در ویندوز">
   <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
-  <link rel="preload" href="assets/Vazirmatn.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
+  <script>
+    try {
+      if (localStorage.getItem('ptf-theme') === 'dark') {
+        document.documentElement.dataset.theme = 'dark';
+        document.querySelector('[name="theme-color"]').content = '#0e1524';
+      }
+    } catch {}
+  </script>
+  <link rel="stylesheet" href="style.css?v=2">
+  <script src="app.js?v=2" defer></script>
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"SoftwareApplication","name":"Persian Typo Fixer","alternateName":"اصلاح تایپ فارسی و انگلیسی","url":"https://persiantypefixer.ghotbani.ir/","description":"اصلاح متن انتخاب‌شده بین چیدمان فارسی و انگلیسی با میان‌بر Ctrl+Alt+X در ویندوز.","applicationCategory":"UtilitiesApplication","operatingSystem":"Windows 10 (1809+) / Windows 11, x64","softwareVersion":"1.2.1","inLanguage":"fa","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"license":"https://github.com/salehghotbani/PersianTypeFixer/blob/main/LICENSE","downloadUrl":"https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.2.1/PersianTypoFixer-v1.2.1-windows-x64-setup.exe","author":{"@type":"Person","name":"Seyed Mohammad Saleh Ghotbani","url":"https://github.com/salehghotbani"}}
   </script>
@@ -35,7 +42,13 @@
   <a class="skip" href="#main">رفتن به محتوای اصلی</a>
   <header class="header wrap">
     <a class="brand" href="#" aria-label="Persian Typo Fixer، ابتدای صفحه"><span class="mark" aria-hidden="true">ف</span><span lang="en" dir="ltr">Persian Typo Fixer</span></a>
-    <nav aria-label="ناوبری اصلی"><a href="#how">چطور کار می‌کند؟</a><a href="#questions">پرسش‌ها</a><a class="nav-download" href="#download">دریافت برنامه <span aria-hidden="true">↙</span></a></nav>
+    <div class="header-actions">
+      <nav aria-label="ناوبری اصلی"><a href="#how">چطور کار می‌کند؟</a><a href="#questions">پرسش‌ها</a><a href="#download">دریافت برنامه</a></nav>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-pressed="false" hidden>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20.9 14.1A9 9 0 0 1 9.9 3.1 9 9 0 1 0 20.9 14.1Z"/></svg>
+        حالت تاریک
+      </button>
+    </div>
   </header>
   <main id="main">
     <section class="hero wrap" aria-labelledby="hero-title">
@@ -70,7 +83,7 @@
       <details><summary>اجرای خودکار اجباری است؟</summary><p>خیر. این گزینه در نصب جدید پیش‌فرض خاموش است. در نصاب یا از منوی آیکون برنامه، تیک «اجرا هنگام ورود به ویندوز» را تغییر دهید. با حذف نصب، تنظیم اجرای خودکار نیز پاک می‌شود.</p></details>
       <details><summary>برای متن ترکیبی یا حروف بزرگ چه اتفاقی می‌افتد؟</summary><p>بهتر است فقط بخش اشتباه را انتخاب کنید؛ زبان غالب جهت تبدیل را تعیین می‌کند. حروف بزرگ انگلیسی مثل کلید Shift تفسیر می‌شوند و بزرگی حروف اصلی از متن فارسی قابل بازیابی نیست.</p></details>
     </div></section>
-    <section class="download wrap" id="download" aria-labelledby="download-title"><div><p class="eyebrow">آماده برای اشتباه بعدی</p><h2 id="download-title">یک میان‌بر به ویندوزت اضافه کن.</h2><p>نسخه ۱.۲.۱ · نصب برای کاربر جاری · بدون نیاز به دسترسی Administrator</p></div><div class="download-actions"><a class="button light" href="https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.2.1/PersianTypoFixer-v1.2.1-windows-x64-setup.exe">دانلود نصاب ویندوز <span aria-hidden="true">↓</span></a><a href="https://github.com/salehghotbani/PersianTypeFixer/releases/latest">نسخه مستقل، Portable و هش فایل‌ها ↗</a></div></section>
+    <section class="download wrap" id="download" aria-labelledby="download-title"><div><p class="eyebrow">آماده برای اشتباه بعدی</p><h2 id="download-title">یک میان‌بر به ویندوزت اضافه کن.</h2><p>نسخه ۱.۲.۱ · نصب برای کاربر جاری · بدون نیاز به دسترسی Administrator</p></div><div class="download-actions"><a class="button primary" href="https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.2.1/PersianTypoFixer-v1.2.1-windows-x64-setup.exe">دانلود نصاب ویندوز <span aria-hidden="true">↓</span></a><a href="https://github.com/salehghotbani/PersianTypeFixer/releases/latest">نسخه مستقل، Portable و هش فایل‌ها ↗</a></div></section>
   </main>
   <footer class="wrap footer"><a class="brand" href="#"><span class="mark" aria-hidden="true">ف</span><span lang="en" dir="ltr">Persian Typo Fixer</span></a><p>ساخته‌شده توسط <a href="https://github.com/salehghotbani"><bdi lang="en">Saleh Ghotbani</bdi></a> · متن‌باز با <a href="https://github.com/salehghotbani/PersianTypeFixer/blob/main/LICENSE">مجوز MIT</a></p><a href="https://github.com/salehghotbani/PersianTypeFixer/issues">گزارش مشکل ↗</a></footer>
 </body>
