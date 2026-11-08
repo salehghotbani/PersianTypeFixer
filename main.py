@@ -1,9 +1,9 @@
-"""Tray application for correcting a selection with Ctrl+Alt+X."""
+"""Tray application for correcting a selection with a global shortcut."""
 
 import os
 import sys
 
-from PySide6.QtCore import QObject, Qt, QTimer
+from PySide6.QtCore import QObject, QSettings, Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMenu, QProxyStyle, QStyle, QStyleOptionMenuItem, QSystemTrayIcon,
@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 
 from app_version import APP_NAME, VERSION
 from selection_conversion import QtClipboard, SelectionConverter
+from shortcut import DEFAULT_SHORTCUT, Shortcut
 from tray_updates import TrayUpdates
 from update_dialogs import show_update_message
 
@@ -62,9 +63,15 @@ class TrayApplication(QObject):
         self.quitting = False
         self.cleaned_up = False
         self.last_status = ""
+        settings = self.shortcut_settings()
+        try:
+            self.shortcut = Shortcut.parse(settings.value("shortcut", str(DEFAULT_SHORTCUT), type=str))
+        except ValueError:
+            self.shortcut = DEFAULT_SHORTCUT
         self.startup = StartupPreference()
         self.create_tray()
         self.updates = TrayUpdates(self)
+        self.menu.insertAction(self.menu.actions()[-1], QAction("تاریخچهٔ نسخه‌ها", self, triggered=self.open_history))
         about_action = QAction("دربارهٔ برنامه", self)
         about_action.triggered.connect(self.open_about)
         self.menu.insertAction(self.menu.actions()[-1], about_action)
@@ -98,13 +105,62 @@ class TrayApplication(QObject):
         self.menu.addAction(self.startup_action)
         self.menu.aboutToShow.connect(self.refresh_startup)
         self.menu.addSeparator()
+        self.menu.addAction("تنظیمات", self.open_settings)
         self.menu.addAction("خروج", self.exit_application)
         self.tray.setContextMenu(self.menu)
 
     def open_about(self):
         from about_dialog import show_about
 
-        show_about(self.create_app_icon(True))
+        show_about(self.create_app_icon(True), self.shortcut)
+
+    def open_history(self):
+        from about_dialog import show_history
+
+        show_history()
+
+    def open_settings(self):
+        from shortcut_dialog import ShortcutDialog
+
+        ShortcutDialog(self.shortcut, self.change_shortcut).exec()
+
+    @staticmethod
+    def shortcut_settings():
+        return QSettings("ghotbani.ir", "PersianTypoFixer")
+
+    def change_shortcut(self, shortcut):
+        if shortcut == self.shortcut:
+            return
+        if self.converter.busy:
+            raise OSError("صبر کنید اصلاح متن کامل شود و دوباره تلاش کنید.")
+
+        was_enabled = self.is_enabled
+        settings = self.shortcut_settings()
+        self.native.unregister_hotkey()
+        try:
+            try:
+                self.native.register_hotkey(shortcut)
+            except OSError as error:
+                raise OSError(f"ثبت میان‌بر {shortcut} ممکن نشد. ممکن است سیستم یا برنامهٔ دیگری از آن استفاده کند.") from error
+            if not was_enabled:
+                self.native.unregister_hotkey()
+            settings.setValue("shortcut", str(shortcut))
+            settings.sync()
+            if settings.status() != QSettings.Status.NoError:
+                raise OSError("ذخیرهٔ میان‌بر ممکن نشد.")
+        except OSError:
+            try:
+                self.native.unregister_hotkey()
+                if was_enabled:
+                    self.native.register_hotkey(self.shortcut)
+            except OSError as error:
+                message = "میان‌بر قبلی دوباره ثبت نشد. ترکیب دیگری را در تنظیمات انتخاب کنید."
+                self.update_enabled_status(self.native.registered, message)
+                raise OSError(message) from error
+            raise
+
+        self.shortcut = shortcut
+        self.show_status("میان‌بر ذخیره شد.")
 
     @staticmethod
     def create_app_icon(enabled):
@@ -124,22 +180,25 @@ class TrayApplication(QObject):
     def set_enabled(self, enabled):
         try:
             if enabled:
-                self.native.register_hotkey()
+                self.native.register_hotkey(self.shortcut)
             else:
                 self.native.unregister_hotkey()
+                self.is_enabled = False
                 self.converter.cancel()
-            self.is_enabled = enabled
-            message = "وضعیت: فعال — Ctrl+Alt+X" if enabled else "وضعیت: غیرفعال"
+            message = "وضعیت: فعال" if enabled else "وضعیت: غیرفعال"
         except OSError as error:
-            self.is_enabled = self.native.registered
-            message = f"خطای میان‌بر: {error}\nممکن است برنامه دیگری Ctrl+Alt+X را گرفته باشد."
+            message = f"خطای میان‌بر: {error}\nممکن است برنامهٔ دیگری {self.shortcut} را گرفته باشد."
+        self.update_enabled_status(self.native.registered, message)
+
+    def update_enabled_status(self, enabled, message):
+        self.is_enabled = enabled
         self.toggle_action.setChecked(self.is_enabled)
         self.tray.setIcon(self.create_app_icon(self.is_enabled))
         self.show_status(message)
 
     def show_status(self, message):
         self.last_status = message
-        state = "فعال — Ctrl+Alt+X" if self.is_enabled else "غیرفعال"
+        state = f"فعال — \u2066{self.shortcut}\u2069" if self.is_enabled else "غیرفعال"
         self.tray.setToolTip(f"{APP_NAME}\n{state}\n{message}")
 
     def toggle_enabled(self):
@@ -175,6 +234,8 @@ class TrayApplication(QObject):
     def conversion_finished(self):
         if self.quitting:
             QApplication.quit()
+        elif self.is_enabled and not self.cleaned_up and not self.native.registered:
+            self.set_enabled(True)
 
     def cleanup(self):
         if self.cleaned_up:

@@ -7,7 +7,7 @@ root = Path(SPECPATH).parent
 a = Analysis(
     [str(root / 'main.py')],
     pathex=[str(root)],
-    datas=[(str(root / name), '.') for name in ('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md')]
+    datas=[(str(root / name), '.') for name in ('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md')]
           + [(str(root / 'licenses'), 'licenses')]
           + copy_metadata('python-xlib') + copy_metadata('six'),
     hiddenimports=['PySide6.support.deprecated'] + collect_submodules('Xlib'),

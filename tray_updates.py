@@ -17,6 +17,7 @@ from update_dialogs import DownloadDialog, release_dialog, show_update_message
 
 CHECK_INTERVAL = 24 * 60 * 60 * 1000
 INITIAL_CHECK_DELAY = 2 * 60 * 1000
+BUSY_RETRY_DELAY = 60 * 1000
 CHECK_LABEL = "بررسی به‌روزرسانی"
 
 
@@ -92,7 +93,13 @@ class TrayUpdates(QObject):
             client.deleteLater()
 
     def check(self, manual=False):
-        if self.client is not None or self.details_dialog or self.progress_dialog or self.controller.quitting:
+        if self.controller.quitting:
+            return
+        if self.client is not None or self.details_dialog or self.progress_dialog:
+            if not manual:
+                self.initial_check.start(BUSY_RETRY_DELAY)
+            elif self.details_dialog:
+                self.show_details()
             return
         self.initial_check.stop()
         self.manual = manual
@@ -109,16 +116,18 @@ class TrayUpdates(QObject):
 
     def checked(self, release):
         self.stop_client()
-        previous = self.release
         self.release = release
         self.restore_action()
-        if release and (self.manual or not previous or previous.version != release.version):
+        if self.manual:
+            if release:
+                self.show_details()
+            else:
+                show_update_message("نسخهٔ نصب‌شده به‌روز است.")
+        elif release:
             self.controller.tray.showMessage(
                 "به‌روزرسانی Persian Typo Fixer",
                 f"نسخهٔ {release.version} منتشر شده است. برای دیدن تغییرات کلیک کنید.",
             )
-        elif self.manual and not release:
-            show_update_message("نسخهٔ نصب‌شده به‌روز است.")
 
     def show_details(self):
         if not self.release or self.client is not None or self.progress_dialog or self.controller.quitting:

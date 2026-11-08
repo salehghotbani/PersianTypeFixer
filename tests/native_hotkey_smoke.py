@@ -9,19 +9,33 @@ import os
 import sys
 from ctypes import wintypes as w
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QApplication
 
 from main import TrayApplication
+from shortcut import Shortcut
 from windows_api import HOTKEY_ID, WM_HOTKEY
 
 
 def main():
     app = QApplication([])
+    with TemporaryDirectory() as directory:
+        TrayApplication.shortcut_settings = staticmethod(
+            lambda: QSettings(str(Path(directory) / "settings.ini"), QSettings.Format.IniFormat)
+        )
+        custom = Shortcut("J", frozenset({"Ctrl", "Alt", "Shift"}))
+        settings = TrayApplication.shortcut_settings()
+        settings.setValue("shortcut", str(custom))
+        settings.sync()
+        exercise(app, custom)
+
+
+def exercise(app, custom):
     controller = TrayApplication()
     if not controller.is_enabled:
         raise RuntimeError(controller.last_status)
@@ -43,10 +57,16 @@ def main():
             assert "PySide6.QtNetwork" not in sys.modules
             assert controller.updates.initial_check.interval() == 120_000
             assert not controller.converter.timer.isActive()
+            assert controller.native.shortcut == custom
             assert [action.text() for action in controller.menu.actions()
                     if action.isVisible() and not action.isSeparator()] == [
-                        "فعال", "اجرا هنگام روشن کردن سیستم", "بررسی به‌روزرسانی", "دربارهٔ برنامه", "خروج",
+                        "فعال", "اجرا هنگام روشن کردن سیستم", "تنظیمات", "بررسی به‌روزرسانی",
+                        "تاریخچهٔ نسخه‌ها", "دربارهٔ برنامه", "خروج",
                     ]
+            changed = Shortcut("K", frozenset({"Ctrl", "Shift"}))
+            controller.change_shortcut(changed)
+            assert controller.native.shortcut == changed
+            assert controller.shortcut_settings().value("shortcut") == str(changed)
             controller.toggle_action.trigger()
             assert not controller.is_enabled and not controller.native.registered
             assert not controller.toggle_action.isChecked()
