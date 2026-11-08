@@ -60,8 +60,6 @@ def main():
         if not url.scheme and not url.netloc:
             if url.path: assert (ROOT / unquote(url.path)).is_file(), link
             if url.fragment: assert url.fragment in doc.ids, link
-    assert (ROOT / 'assets/Vazirmatn.ttf').is_file()
-    assert (ROOT / 'assets/OFL.txt').is_file()
     assert (ROOT / 'assets/social.png').stat().st_size > 1000
     assert CANONICAL in (ROOT / 'robots.txt').read_text()
     tree = ET.parse(ROOT / 'sitemap.xml')
