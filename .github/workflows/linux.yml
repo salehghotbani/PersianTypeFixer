@@ -70,6 +70,16 @@ jobs:
             "
             dbus-run-session -- bash /wayland-smoke.sh headless
           '
+      - name: Install and start the DEB on Ubuntu 26.04
+        if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$PWD/dist/release:/packages:ro" \
+            -v "$PWD/tests/linux_wayland_smoke.sh:/wayland-smoke.sh:ro" ubuntu:26.04 bash -euxc '
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y /packages/*.deb dbus-daemon weston
+            /opt/persiantypefixer/PersianTypoFixer --version
+            dbus-run-session -- bash /wayland-smoke.sh headless
+          '
       - uses: actions/upload-artifact@v7.0.2
         if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts)
         with:

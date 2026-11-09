@@ -49,7 +49,7 @@ sudo dnf install ./PersianTypoFixer-v1.5.0-linux-x86_64.rpm
 
 در Linux، **Persian Typo Fixer** را از منوی برنامه‌ها باز کنید. روی Fedora Workstation با GNOME، برای دیدن آیکون System Tray افزونهٔ [AppIndicator][fedora-indicator] را نصب و فعال کنید.
 
-در **Wayland**، محیط دسکتاپ باید Portalهای Global Shortcuts، Remote Desktop و Clipboard را ارائه کند. Ubuntu 26.04 با GNOME 50 و Fedora Workstation با GNOME جدید این مسیر را فراهم می‌کنند. بار اول ثبت میان‌بر را تأیید کنید. در اولین استفاده از میان‌بر، دسترسی Keyboard و Clipboard را بدهید. سپس به کادر متن برگردید و میان‌بر را دوباره بزنید. برای تغییر میان‌بر، «تنظیمات» پنجرهٔ میان‌برهای محیط دسکتاپ را باز می‌کند.
+پشتیبانی **Wayland آزمایشی** است و به Portalهای Global Shortcuts، Remote Desktop و Clipboard نیاز دارد. Ubuntu 26.04 با GNOME 50 و Fedora Workstation 44 با GNOME برای این مسیر در نظر گرفته شده‌اند. بار اول ثبت میان‌بر را تأیید کنید. در اولین استفاده از میان‌بر، دسترسی Keyboard و Clipboard را بدهید. سپس به کادر متن برگردید و میان‌بر را دوباره بزنید. برای تغییر میان‌بر، «تنظیمات» پنجرهٔ میان‌برهای محیط دسکتاپ را باز می‌کند.
 
 ## استفاده
 

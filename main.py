@@ -252,6 +252,9 @@ class TrayApplication(QObject):
     def exit_application(self):
         self.quitting = True
         self.updates.stop()
+        if self.wayland:
+            QApplication.quit()
+            return
         self.set_enabled(False)
         # Let an already queued paste consume the clipboard before exiting.
         if not self.converter.busy:
