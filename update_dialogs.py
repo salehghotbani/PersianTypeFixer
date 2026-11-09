@@ -82,14 +82,16 @@ class ReleaseNotesDocument(QTextDocument):
 class ThemedDialog(QDialog):
     extra_theme = ""
 
-    def __init__(self, title, object_name):
+    def __init__(self, title, object_name, appearance):
         super().__init__()
         self.setObjectName(object_name)
         self.setWindowTitle(title)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setLayoutDirection(Qt.RightToLeft)
+        self.appearance = appearance
         self.colors = None
         self.apply_theme()
+        appearance.changed.connect(self.apply_theme)
         QApplication.styleHints().colorSchemeChanged.connect(self.apply_theme)
         QApplication.instance().paletteChanged.connect(self.apply_theme)
 
@@ -98,17 +100,18 @@ class ThemedDialog(QDialog):
         self.apply_caption()
 
     def apply_theme(self, *_):
-        scheme = QApplication.styleHints().colorScheme()
-        palette = QApplication.palette()
-        dark = scheme == Qt.ColorScheme.Dark or (
-            scheme == Qt.ColorScheme.Unknown and palette.color(QPalette.Window).lightness() < 128
-        )
-        colors = DARK if dark else LIGHT
+        colors = DARK if self.appearance.is_dark() else LIGHT
         if self.colors is colors:
             return
         self.colors = colors
         palette = QPalette()
-        palette.setColor(QPalette.Link, QColor(colors["link"]))
+        for role, key in ((QPalette.Link, "link"), (QPalette.Text, "text"),
+                          (QPalette.ButtonText, "text"), (QPalette.Base, "surface"),
+                          (QPalette.Button, "control"), (QPalette.Window, "background"),
+                          (QPalette.WindowText, "text"), (QPalette.Highlight, "accent"),
+                          (QPalette.Mid, "border")):
+            palette.setColor(role, QColor(colors[key]))
+        palette.setColor(QPalette.HighlightedText, Qt.white)
         self.setPalette(palette)
         self.setStyleSheet((THEME + self.extra_theme).format(**colors))
         if self.isVisible():
@@ -128,8 +131,8 @@ class ThemedDialog(QDialog):
 
 
 class UpdateDialog(ThemedDialog):
-    def __init__(self, title, status, description, version=None, warning=False):
-        super().__init__(title, "updateDialog")
+    def __init__(self, title, status, description, appearance, version=None, warning=False):
+        super().__init__(title, "updateDialog", appearance)
         self.setMinimumWidth(360)
 
         self.content = QVBoxLayout(self)
@@ -167,11 +170,11 @@ class UpdateDialog(ThemedDialog):
         cancel.setFocus()
 
 
-def release_dialog(release, linux=False):
+def release_dialog(release, appearance, linux=False):
     description = ("تغییرات را بخوانید و بستهٔ نصب را از صفحهٔ انتشار بگیرید." if linux
                    else "تغییرات این نسخه را بخوانید و نصب را شروع کنید.")
     dialog = UpdateDialog(
-        "نسخهٔ جدید آماده است", "به‌روزرسانی", description,
+        "نسخهٔ جدید آماده است", "به‌روزرسانی", description, appearance,
         version=release.version,
     )
     dialog.setAttribute(Qt.WA_DeleteOnClose)
@@ -204,10 +207,10 @@ def notes_browser(markdown, accessible_name):
 
 
 class DownloadDialog(UpdateDialog):
-    def __init__(self, release):
+    def __init__(self, release, appearance):
         super().__init__(
             "در حال دانلود نصاب", "دانلود به‌روزرسانی", "پس از دریافت و بررسی فایل، نصب شروع می‌شود.",
-            version=release.version,
+            appearance, version=release.version,
         )
         self.resize(460, self.sizeHint().height())
         self.progress_bar = QProgressBar()
@@ -231,10 +234,10 @@ class DownloadDialog(UpdateDialog):
         self.size_label.setText(f"{received / 1e6:.1f} از {total / 1e6:.1f} مگابایت".translate(PERSIAN_DIGITS))
 
 
-def show_update_message(text, warning=False):
+def show_update_message(text, appearance, warning=False):
     title = "مشکلی در به‌روزرسانی رخ داد" if warning else "بررسی نسخه کامل شد"
     status = "نیاز به بررسی" if warning else "به‌روز"
-    dialog = UpdateDialog(title, status, text, warning=warning)
+    dialog = UpdateDialog(title, status, text, appearance, warning=warning)
     dialog.add_actions("باشه")
     dialog.resize(460, dialog.sizeHint().height())
     dialog.exec()

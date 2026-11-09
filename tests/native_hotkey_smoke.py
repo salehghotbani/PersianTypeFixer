@@ -19,7 +19,9 @@ from PySide6.QtCore import QSettings, QTimer
 from PySide6.QtWidgets import QApplication, QCheckBox, QPushButton, QSystemTrayIcon, QTextBrowser
 
 from main import TrayApplication
+from appearance import Appearance
 from shortcut import Shortcut
+from update_dialogs import DARK, LIGHT, UpdateDialog
 from windows_api import HOTKEY_ID, WM_HOTKEY
 
 
@@ -63,7 +65,7 @@ def exercise(app, custom):
             assert controller.dashboard is None
             assert [action.text() for action in controller.menu.actions()
                     if action.isVisible() and not action.isSeparator()] == [
-                        "فعال", "اجرا هنگام روشن کردن سیستم", "تنظیمات", "بررسی به‌روزرسانی",
+                        "تنظیمات", "فعال", "اجرا هنگام روشن کردن سیستم", "بررسی به‌روزرسانی",
                         "تاریخچهٔ نسخه‌ها", "دربارهٔ برنامه", "خروج",
                     ]
             changed = Shortcut("K", frozenset({"Ctrl", "Shift"}))
@@ -78,12 +80,12 @@ def exercise(app, custom):
             controller.toggle_action.trigger()
             assert controller.is_enabled and controller.native.registered
             assert controller.toggle_action.isChecked()
-            exit_button = exercise_dashboard(app, controller, changed)
+            exercise_dashboard(app, controller, changed)
         except Exception as error:
             errors.append(error)
             app.quit()
         else:
-            exit_button.click()
+            controller.exit_action.trigger()
 
     def timed_out():
         errors.append(TimeoutError("The tray Exit action did not stop the application"))
@@ -114,6 +116,14 @@ def exercise_dashboard(app, controller, changed):
     assert window.isVisible() and window.pages.currentIndex() == 0
     assert [widget for widget in app.topLevelWidgets() if widget.isVisible()] == [window]
     assert str(changed) in window.current_shortcut.text()
+    assert not any(button.text() == "خروج" for button in window.findChildren(QPushButton))
+    dialog = UpdateDialog("آزمون", "تم", "پیش‌نمایش", controller.appearance)
+    for index, mode, colors in ((2, "dark", DARK), (1, "light", LIGHT)):
+        window.theme_buttons.button(index).click()
+        assert window.colors is colors and dialog.colors is colors
+        assert Appearance(controller.shortcut_settings()).mode == mode
+    window.theme_buttons.button(0).click()
+    assert Appearance(controller.shortcut_settings()).mode == "system"
     settings_page = window.pages.currentWidget()
     checkboxes = {box.text(): box for box in settings_page.findChildren(QCheckBox)}
     checkboxes["فعال"].click()
@@ -142,8 +152,6 @@ def exercise_dashboard(app, controller, changed):
     window.close()
     app.processEvents()
     assert not window.isVisible() and not controller.quitting and controller.native.registered
-    controller.open_settings()
-    return next(button for button in window.findChildren(QPushButton) if button.text() == "خروج")
 
 
 if __name__ == "__main__":
