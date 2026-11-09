@@ -2,11 +2,40 @@
 
 from string import ascii_uppercase
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtGui import QPainter, QPen
+from PySide6.QtWidgets import (
+    QCheckBox, QComboBox, QHBoxLayout, QPushButton, QStyle, QStyleOptionButton,
+    QVBoxLayout, QWidget,
+)
 
 from shortcut import DEFAULT_SHORTCUT, MODIFIERS, Shortcut
 from update_dialogs import label
+
+
+class ModifierCheckBox(QCheckBox):
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        option = QStyleOptionButton()
+        self.initStyleOption(option)
+        rect = QRectF(self.style().subElementRect(QStyle.SE_CheckBoxIndicator, option, self))
+        palette = option.palette
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.fillRect(rect, palette.base())
+        painter.setPen(QPen(palette.mid().color(), 1))
+        painter.setBrush(palette.base())
+        if self.isChecked():
+            painter.setPen(Qt.NoPen)
+            painter.setBrush(palette.highlight())
+        painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 3, 3)
+        if self.isChecked():
+            painter.setPen(QPen(Qt.white, 1.5, Qt.SolidLine, Qt.RoundCap))
+            x, y = rect.center().x(), rect.center().y()
+            middle = QPointF(x - 1, y + 2)
+            painter.drawLine(QPointF(x - 3, y), middle)
+            painter.drawLine(middle, QPointF(x + 3, y - 2))
+        painter.end()
 
 
 class ShortcutEditor(QWidget):
@@ -23,7 +52,7 @@ class ShortcutEditor(QWidget):
         self.save = save
         row = QHBoxLayout()
         row.setDirection(QHBoxLayout.LeftToRight)
-        self.modifiers = {key: QCheckBox(key) for key in MODIFIERS}
+        self.modifiers = {key: ModifierCheckBox(key) for key in MODIFIERS}
         for checkbox in self.modifiers.values():
             checkbox.setLayoutDirection(Qt.LeftToRight)
             row.addWidget(checkbox)
@@ -45,7 +74,8 @@ class ShortcutEditor(QWidget):
         apply.setAutoDefault(False)
         apply.clicked.connect(self.apply_shortcut)
         actions.addWidget(apply)
-        restore = QPushButton("بازگردانی پیش‌فرض")
+        restore = QPushButton("بازنشانی")
+        restore.setToolTip("بازگرداندن میان‌بر پیش‌فرض")
         restore.setAutoDefault(False)
         restore.clicked.connect(lambda: self.set_shortcut(DEFAULT_SHORTCUT))
         actions.addWidget(restore)

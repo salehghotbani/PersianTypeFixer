@@ -122,7 +122,7 @@ class TrayUpdates(QObject):
             if release:
                 self.show_details()
             else:
-                show_update_message("نسخهٔ نصب‌شده به‌روز است.")
+                show_update_message("نسخهٔ نصب‌شده به‌روز است.", self.controller.appearance)
         elif release:
             self.controller.tray.showMessage(
                 "به‌روزرسانی Persian Typo Fixer",
@@ -133,7 +133,9 @@ class TrayUpdates(QObject):
         if not self.release or self.client is not None or self.progress_dialog or self.controller.quitting:
             return
         if not self.details_dialog:
-            dialog = self.details_dialog = release_dialog(self.release, linux=sys.platform.startswith("linux"))
+            dialog = self.details_dialog = release_dialog(
+                self.release, self.controller.appearance, linux=sys.platform.startswith("linux"),
+            )
             dialog.finished.connect(self.details_closed)
         self.details_dialog.show()
         self.details_dialog.raise_()
@@ -151,7 +153,7 @@ class TrayUpdates(QObject):
         self.action.setEnabled(False)
         self.action.setText("در حال دانلود به‌روزرسانی…")
         self.available_action.setVisible(False)
-        dialog = self.progress_dialog = DownloadDialog(self.release)
+        dialog = self.progress_dialog = DownloadDialog(self.release, self.controller.appearance)
         dialog.rejected.connect(self.cancel_download)
         dialog.show()
         self.start_client().start_download(self.release)
@@ -177,7 +179,7 @@ class TrayUpdates(QObject):
         self.close_progress()
         self.restore_action()
         if report:
-            show_update_message(message, warning=True)
+            show_update_message(message, self.controller.appearance, warning=True)
 
     def install(self, download):
         self.stop_client()
@@ -187,7 +189,7 @@ class TrayUpdates(QObject):
         except (OSError, KeyError):
             download.remove()
             self.restore_action()
-            show_update_message("اجرای نصاب ممکن نشد. دوباره امتحان کنید.", warning=True)
+            show_update_message("اجرای نصاب ممکن نشد. دوباره امتحان کنید.", self.controller.appearance, warning=True)
             return
         # The installer helper now owns this directory and removes it after Setup exits.
         download.directory.setAutoRemove(False)

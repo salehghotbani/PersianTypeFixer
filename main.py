@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from app_version import APP_NAME, VERSION
+from appearance import Appearance
 from selection_conversion import QtClipboard, SelectionConverter
 from shortcut import DEFAULT_SHORTCUT, Shortcut
 from tray_updates import TrayUpdates
@@ -66,6 +67,7 @@ class TrayApplication(QObject):
         self.cleaned_up = False
         self.last_status = ""
         settings = self.shortcut_settings()
+        self.appearance = Appearance(settings, self)
         try:
             self.shortcut = Shortcut.parse(settings.value("shortcut", str(DEFAULT_SHORTCUT), type=str))
         except ValueError:
@@ -104,6 +106,8 @@ class TrayApplication(QObject):
         style = TrayMenuStyle(self.menu.style().objectName())
         style.setParent(self.menu)
         self.menu.setStyle(style)
+        self.menu.addAction("تنظیمات", self.open_settings)
+        self.menu.addSeparator()
         self.toggle_action = QAction("فعال", self)
         self.toggle_action.setCheckable(True)
         self.toggle_action.triggered.connect(self.toggle_enabled)
@@ -114,7 +118,6 @@ class TrayApplication(QObject):
         self.menu.addAction(self.startup_action)
         self.menu.aboutToShow.connect(self.refresh_startup)
         self.menu.addSeparator()
-        self.menu.addAction("تنظیمات", self.open_settings)
         self.exit_action = self.menu.addAction("خروج", self.exit_application)
         if self.wayland:
             # An xdg-popup requires a Wayland parent surface and an input serial.
@@ -339,7 +342,8 @@ def main():
         controller.tray.show()
         if "--update-install-failed" in sys.argv:
             QTimer.singleShot(0, lambda: show_update_message(
-                "نصب به‌روزرسانی کامل نشد. از منوی کنار ساعت دوباره امتحان کنید.", warning=True,
+                "نصب به‌روزرسانی کامل نشد. از منوی کنار ساعت دوباره امتحان کنید.",
+                controller.appearance, warning=True,
             ))
         return app.exec()
     except OSError as error:
