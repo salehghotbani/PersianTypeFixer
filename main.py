@@ -221,6 +221,8 @@ class TrayApplication(QObject):
 
     def show_status(self, message):
         self.last_status = message
+        if "--verbose" in sys.argv:
+            print(message, file=sys.stderr, flush=True)
         trigger = self.trigger_description or self.shortcut
         state = f"فعال — \u2066{trigger}\u2069" if self.is_enabled else "غیرفعال"
         self.tray.setToolTip(f"{APP_NAME}\n{state}\n{message}")

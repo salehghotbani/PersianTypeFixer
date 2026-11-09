@@ -64,7 +64,7 @@ def wait_for(app, process, condition, message):
 
 
 def exercise(app, editor, native, command, shortcut, cases):
-    process = subprocess.Popen(command)
+    process = subprocess.Popen([*command, "--verbose"])
     try:
         def hotkey_taken():
             try:
@@ -94,6 +94,8 @@ def exercise(app, editor, native, command, shortcut, cases):
             keycodes.append(native.keys[shortcut.letter.lower()])
             for code in keycodes:
                 xtest.fake_input(native.display, X.KeyPress, code)
+            native.display.sync()
+            time.sleep(0.04)
             for code in reversed(keycodes):
                 xtest.fake_input(native.display, X.KeyRelease, code)
             native.display.flush()

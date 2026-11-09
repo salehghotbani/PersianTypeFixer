@@ -206,8 +206,6 @@ class WaylandPortal:
             result = await self.request("RemoteDesktop", "Start", "osa{sv}", [session, ""])
             if not (option(result, "devices", 0) & KEYBOARD and option(result, "clipboard_enabled", False)):
                 raise PortalError("دسترسی صفحه‌کلید و Clipboard لازم است.")
-            if self.formats is None:
-                self.formats = []
             self.events.token_changed.emit(option(result, "restore_token", ""))
         except BaseException:
             self.input_session = None
