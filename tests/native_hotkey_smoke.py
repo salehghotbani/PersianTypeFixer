@@ -16,7 +16,7 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PySide6.QtCore import QSettings, QTimer
-from PySide6.QtWidgets import QApplication, QCheckBox, QPushButton, QSystemTrayIcon, QTextBrowser
+from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QPushButton, QSystemTrayIcon, QTextBrowser
 
 from main import TrayApplication
 from appearance import Appearance
@@ -114,6 +114,8 @@ def exercise_dashboard(app, controller, changed):
     controller.open_settings()
     window = controller.dashboard
     assert window.isVisible() and window.pages.currentIndex() == 0
+    assert window.navigation.item(0).text() == "عمومی"
+    assert window.pages.currentWidget().findChild(QLabel, "title").text() == "عمومی"
     assert [widget for widget in app.topLevelWidgets() if widget.isVisible()] == [window]
     assert str(changed) in window.current_shortcut.text()
     assert not any(button.text() == "خروج" for button in window.findChildren(QPushButton))
