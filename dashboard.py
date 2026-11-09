@@ -14,6 +14,9 @@ from shortcut_editor import ShortcutEditor
 from update_dialogs import ThemedDialog, label
 
 
+GENERAL_PAGE_TITLE = "عمومی"
+
+
 def navigation_icon(index):
     pixmap = QPixmap(36, 36)
     pixmap.setDevicePixelRatio(2)
@@ -116,7 +119,7 @@ class Dashboard(ThemedDialog):
         self.navigation.setObjectName("navigation")
         self.navigation.setAccessibleName("صفحه‌های برنامه")
         self.navigation.setIconSize(QSize(18, 18))
-        for index, title in enumerate(("تنظیمات", "به‌روزرسانی", "دربارهٔ برنامه")):
+        for index, title in enumerate((GENERAL_PAGE_TITLE, "به‌روزرسانی", "دربارهٔ برنامه")):
             self.navigation.addItem(QListWidgetItem(navigation_icon(index), title))
         self.navigation.setSpacing(2)
         sidebar_content.addWidget(self.navigation, 1)
@@ -198,7 +201,7 @@ class Dashboard(ThemedDialog):
         return row
 
     def settings_page(self):
-        page, layout = self.page("تنظیمات", "میان‌بر، اجرای خودکار و ظاهر برنامه را تنظیم کنید.", "ترجیحات برنامه")
+        page, layout = self.page(GENERAL_PAGE_TITLE, "میان‌بر، اجرای خودکار و ظاهر برنامه را تنظیم کنید.", "ترجیحات برنامه")
         scroll = QScrollArea()
         scroll.setObjectName("settingsScroll")
         scroll.setWidgetResizable(True)
