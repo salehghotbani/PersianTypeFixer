@@ -42,6 +42,7 @@ jobs:
       - name: Test the Wayland portal client
         run: dbus-run-session -- python -m unittest discover -s tests -p test_wayland_portal.py -v
       - name: Build the Debian and RPM packages
+        id: linux_packages
         run: |
           python -m PyInstaller --noconfirm --clean packaging/linux.spec
           python tools/package_linux.py
@@ -55,6 +56,7 @@ jobs:
           /opt/persiantypefixer/PersianTypoFixer --version
           xvfb-run -a -s '-screen 0 1280x720x24 -noreset' python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
       - name: Start the installed app with native Wayland
+        if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
         run: |
           dbus-run-session -- bash -eu -o pipefail -c '
             export XDG_RUNTIME_DIR="$(mktemp -d)" WAYLAND_DISPLAY=wayland-smoke XDG_SESSION_TYPE=wayland
@@ -73,6 +75,7 @@ jobs:
             test "$result" -eq 124
           '
       - name: Install and start the RPM on Fedora
+        if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
         run: |
           docker run --rm -v "$PWD/dist/release:/packages:ro" fedora:44 bash -euxc '
             dnf -y install /packages/*.rpm xorg-x11-server-Xvfb xorg-x11-xauth

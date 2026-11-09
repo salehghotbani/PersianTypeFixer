@@ -80,12 +80,15 @@ def exercise(app, editor, native, command, shortcut, cases):
             editor.setPlainText(original)
             editor.selectAll()
             prior = f"prior clipboard for {shortcut} in XKB group {group}"
-            clipboard = app.clipboard()
-            clipboard.setText(prior)
+            # Start with a separate owner, so Qt must claim the selection when
+            # the editor receives Ctrl+C, even on a coarse X server clock.
+            subprocess.run(["xclip", "-selection", "clipboard", "-in"],
+                           input=prior.encode(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                           check=True, timeout=2)
             app.processEvents()
             assert editor.hasFocus() and editor.textCursor().hasSelection()
             prior_owner = window_id(native.display.get_selection_owner(native.clipboard))
-            assert native.copy_belongs_to(native.focused_target())
+            assert prior_owner and not native.copy_belongs_to(native.focused_target())
             keycodes = [native.keycode(f"{key.replace('Ctrl', 'Control')}_L")
                         for key in MODIFIERS if key in shortcut.modifiers]
             keycodes.append(native.keys[shortcut.letter.lower()])

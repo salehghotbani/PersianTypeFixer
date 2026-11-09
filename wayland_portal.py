@@ -373,7 +373,8 @@ class WaylandPortal:
                 self.events.status_changed.emit("متن اصلاح شد.")
         finally:
             if self.input_session and self.generation == restore_generation:
-                await self.set_clipboard(original)
+                # Some backends reject a selection without MIME types.
+                await self.set_clipboard(original or {TEXT_TYPES[0]: b""})
 
     async def close(self):
         self.enabled = False

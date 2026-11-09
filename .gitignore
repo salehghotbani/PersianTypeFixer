@@ -3,6 +3,7 @@ build/
 dist/
 *.[eE][xX][eE]
 *.[dD][eE][bB]
+*.[rR][pP][mM]
 
 # Local Python environment and bytecode
 .venv/
