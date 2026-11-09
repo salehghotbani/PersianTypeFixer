@@ -3,8 +3,8 @@
 import os
 import sys
 
-from PySide6.QtCore import QObject, QSettings, Qt, QTimer
-from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPalette, QPixmap
+from PySide6.QtCore import QEvent, QObject, QSettings, Qt, QTimer
+from PySide6.QtGui import QAction, QColor, QCursor, QFont, QIcon, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QMenu, QProxyStyle, QStyle, QStyleOptionMenuItem, QSystemTrayIcon,
 )
@@ -59,6 +59,7 @@ class TrayApplication(QObject):
     def __init__(self, native=None, wayland=False):
         super().__init__()
         self.wayland = wayland
+        self.dashboard = None
         self.trigger_description = ""
         self.is_enabled = False
         self.quitting = False
@@ -114,26 +115,41 @@ class TrayApplication(QObject):
         self.menu.aboutToShow.connect(self.refresh_startup)
         self.menu.addSeparator()
         self.menu.addAction("تنظیمات", self.open_settings)
-        self.menu.addAction("خروج", self.exit_application)
+        self.exit_action = self.menu.addAction("خروج", self.exit_application)
+        if self.wayland:
+            # An xdg-popup requires a Wayland parent surface and an input serial.
+            # Tray activation arrives over D-Bus, so use the same menu as a tool.
+            self.menu.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
+            self.menu.installEventFilter(self)
         self.tray.setContextMenu(self.menu)
+        self.tray.activated.connect(self.show_tray_menu)
 
-    def open_about(self):
-        from about_dialog import show_about
+    def show_tray_menu(self, reason):
+        # Qt and the desktop host already handle the native context click.
+        if reason == QSystemTrayIcon.Trigger and not self.menu.isVisible():
+            self.menu.popup(QCursor.pos())
 
-        show_about(self.create_app_icon(True), self.shortcut)
+    def eventFilter(self, watched, event):
+        if watched is self.menu and event.type() == QEvent.WindowDeactivate:
+            self.menu.hide()
+        return super().eventFilter(watched, event)
 
-    def open_history(self):
-        from about_dialog import show_history
+    def open_dashboard(self, page):
+        if self.dashboard is None:
+            from dashboard import Dashboard
 
-        show_history()
+            self.dashboard = Dashboard(self)
+        self.refresh_startup()
+        self.dashboard.open_page(page)
 
     def open_settings(self):
-        if self.wayland:
-            self.converter.configure_shortcuts()
-            return
-        from shortcut_dialog import ShortcutDialog
+        self.open_dashboard(0)
 
-        ShortcutDialog(self.shortcut, self.change_shortcut).exec()
+    def open_history(self):
+        self.open_dashboard(1)
+
+    def open_about(self):
+        self.open_dashboard(2)
 
     @staticmethod
     def shortcut_settings():
@@ -226,6 +242,8 @@ class TrayApplication(QObject):
         trigger = self.trigger_description or self.shortcut
         state = f"فعال — \u2066{trigger}\u2069" if self.is_enabled else "غیرفعال"
         self.tray.setToolTip(f"{APP_NAME}\n{state}\n{message}")
+        if self.dashboard is not None:
+            self.dashboard.refresh_status()
 
     def toggle_enabled(self):
         self.set_enabled(not self.is_enabled)
@@ -271,6 +289,8 @@ class TrayApplication(QObject):
             return
         self.cleaned_up = True
         self.updates.stop()
+        if self.dashboard is not None:
+            self.dashboard.close()
         if self.wayland:
             self.converter.close()
             self.tray.hide()

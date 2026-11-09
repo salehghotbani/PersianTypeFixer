@@ -10,12 +10,13 @@ import sys
 from ctypes import wintypes as w
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import Mock
 
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PySide6.QtCore import QSettings, QTimer
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QCheckBox, QSystemTrayIcon, QTextBrowser
 
 from main import TrayApplication
 from shortcut import Shortcut
@@ -24,6 +25,7 @@ from windows_api import HOTKEY_ID, WM_HOTKEY
 
 def main():
     app = QApplication([])
+    app.setQuitOnLastWindowClosed(False)
     with TemporaryDirectory() as directory:
         TrayApplication.shortcut_settings = staticmethod(
             lambda: QSettings(str(Path(directory) / "settings.ini"), QSettings.Format.IniFormat)
@@ -58,6 +60,7 @@ def exercise(app, custom):
             assert controller.updates.initial_check.interval() == 120_000
             assert not controller.converter.timer.isActive()
             assert controller.native.shortcut == custom
+            assert controller.dashboard is None
             assert [action.text() for action in controller.menu.actions()
                     if action.isVisible() and not action.isSeparator()] == [
                         "فعال", "اجرا هنگام روشن کردن سیستم", "تنظیمات", "بررسی به‌روزرسانی",
@@ -75,6 +78,7 @@ def exercise(app, custom):
             controller.toggle_action.trigger()
             assert controller.is_enabled and controller.native.registered
             assert controller.toggle_action.isChecked()
+            exercise_dashboard(app, controller, changed)
         except Exception as error:
             errors.append(error)
             app.quit()
@@ -96,6 +100,40 @@ def exercise(app, custom):
     if errors:
         raise errors[0]
     print("Tray-only startup, native hotkey, menu toggle, and cleanup passed")
+
+
+def exercise_dashboard(app, controller, changed):
+    controller.startup = Mock()
+    controller.startup.is_enabled.return_value = False
+    controller.tray.activated.emit(QSystemTrayIcon.Trigger)
+    assert controller.tray.contextMenu() is controller.menu and controller.menu.isVisible()
+    controller.menu.hide()
+
+    controller.open_settings()
+    window = controller.dashboard
+    assert window.isVisible() and window.pages.currentIndex() == 0
+    assert str(changed) in window.current_shortcut.text()
+    settings_page = window.pages.currentWidget()
+    checkboxes = {box.text(): box for box in settings_page.findChildren(QCheckBox)}
+    checkboxes["فعال"].click()
+    assert not controller.toggle_action.isChecked() and not checkboxes["فعال"].isChecked()
+    controller.toggle_action.trigger()
+    assert checkboxes["فعال"].isChecked()
+    controller.startup.is_enabled.return_value = True
+    checkboxes["اجرا هنگام روشن کردن سیستم"].click()
+    controller.startup.set_enabled.assert_called_once_with(True)
+    assert controller.startup_action.isChecked()
+
+    controller.open_history()
+    assert controller.dashboard is window and window.pages.currentIndex() == 1
+    assert "1.0.0" in window.pages.currentWidget().findChild(QTextBrowser).toPlainText()
+    controller.open_about()
+    assert controller.dashboard is window and window.pages.currentIndex() == 2
+    window.navigation.setCurrentRow(0)
+    assert window.pages.currentIndex() == 0
+    window.close()
+    app.processEvents()
+    assert not window.isVisible() and not controller.quitting and controller.native.registered
 
 
 if __name__ == "__main__":
