@@ -51,7 +51,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=['PySide6.QtQml', 'PySide6.QtQuick',
-              'PySide6.QtPdf', 'PySide6.QtOpenGL'],
+              'PySide6.QtPdf', 'PySide6.QtOpenGL', 'wayland_session', 'wayland_portal'],
     noarchive=False,
     optimize=0,
 )

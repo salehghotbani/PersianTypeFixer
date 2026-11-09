@@ -21,7 +21,8 @@ class SingleInstance:
     def __init__(self):
         runtime = xdg_directory("XDG_RUNTIME_DIR", ".cache") / DESKTOP_ID
         runtime.mkdir(mode=0o700, parents=True, exist_ok=True)
-        display_id = hashlib.sha256(os.environ.get("DISPLAY", "").encode()).hexdigest()[:16]
+        display = os.environ.get("WAYLAND_DISPLAY") or os.environ.get("DISPLAY", "")
+        display_id = hashlib.sha256(display.encode()).hexdigest()[:16]
         self.lock = (runtime / f"{display_id}.lock").open("ab")
         try:
             fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)

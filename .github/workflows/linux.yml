@@ -34,14 +34,18 @@ jobs:
       - name: Install build and X11 dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils \
+          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils rpm weston \
+            libwayland-client0 libwayland-cursor0 libwayland-egl1 \
             fonts-dejavu-core libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
           python -m pip install -r requirements-build.txt
-      - name: Build the Debian installer
+      - name: Test the Wayland portal client
+        run: dbus-run-session -- python -m unittest discover -s tests -p test_wayland_portal.py -v
+      - name: Build the Debian and RPM packages
         run: |
           python -m PyInstaller --noconfirm --clean packaging/linux.spec
           python tools/package_linux.py
+          python tools/package_linux.py --rpm
       - name: Install and exercise the packaged app under X11
         env:
           QT_QPA_PLATFORM: xcb
@@ -50,10 +54,39 @@ jobs:
           sudo apt-get install -y ./dist/release/*.deb
           /opt/persiantypefixer/PersianTypoFixer --version
           xvfb-run -a -s '-screen 0 1280x720x24 -noreset' python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
+      - name: Start the installed app with native Wayland
+        run: |
+          dbus-run-session -- bash -eu -o pipefail -c '
+            export XDG_RUNTIME_DIR="$(mktemp -d)" WAYLAND_DISPLAY=wayland-smoke XDG_SESSION_TYPE=wayland
+            export XDG_CONFIG_HOME="$XDG_RUNTIME_DIR/config"
+            unset DISPLAY
+            weston --backend=headless-backend.so --socket="$WAYLAND_DISPLAY" --idle-time=0 --no-config >weston.log 2>&1 &
+            compositor=$!
+            trap "kill $compositor" EXIT
+            for i in {1..50}; do
+              test ! -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" || break
+              sleep 0.1
+            done
+            test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" || { cat weston.log; exit 1; }
+            result=0
+            timeout 4s /opt/persiantypefixer/PersianTypoFixer || result=$?
+            test "$result" -eq 124
+          '
+      - name: Install and start the RPM on Fedora
+        run: |
+          docker run --rm -v "$PWD/dist/release:/packages:ro" fedora:44 bash -euxc '
+            dnf -y install /packages/*.rpm xorg-x11-server-Xvfb xorg-x11-xauth
+            /opt/persiantypefixer/PersianTypoFixer --version
+            XDG_SESSION_TYPE=x11 QT_QPA_PLATFORM=xcb xvfb-run -a bash -c "
+              rc=0; timeout 4s /opt/persiantypefixer/PersianTypoFixer || rc=\$?; test \"\$rc\" -eq 124
+            "
+          '
       - uses: actions/upload-artifact@v7.0.2
         if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts)
         with:
           name: PersianTypoFixer-linux-amd64
-          path: dist/release/*.deb
+          path: |
+            dist/release/*.deb
+            dist/release/*.rpm
           if-no-files-found: error
           retention-days: 7
