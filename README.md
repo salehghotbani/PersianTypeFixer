@@ -9,7 +9,8 @@
 
 [![آخرین نسخه][release-badge]][releases]
 [![دانلود ویندوز][windows-badge]][windows]
-[![دانلود لینوکس][linux-badge]][linux]
+[![دانلود Ubuntu][linux-badge]][linux]
+[![دانلود Fedora][fedora-badge]][fedora]
 [![مجوز MIT][license-badge]](LICENSE)
 
 [![ساخت ویندوز][windows-ci]][windows-workflow]
@@ -27,17 +28,28 @@
 | سیستم‌عامل | پیش‌نیاز | دانلود |
 | --- | --- | --- |
 | **Windows** | Windows 10 نسخهٔ 1809 به بعد یا Windows 11، معماری x64 | [نصاب EXE][windows] · [Standalone EXE][standalone] · [Portable ZIP][portable] |
-| **Linux** | Ubuntu 22.04 یا Debian 12 به بعد، معماری amd64 و محیط دسکتاپ با X11 و System Tray | [بستهٔ DEB][linux] |
+| **Ubuntu / Debian** | x86-64، Ubuntu 22.04 یا Debian 12 به بعد برای X11. برای Wayland به Portal سازگار نیاز است. | [بستهٔ DEB][linux] |
+| **Fedora** | x86-64، Fedora 44 یا جدیدتر با X11 یا Wayland و Portal سازگار | [بستهٔ RPM][fedora] |
 
 **Windows.** نصاب برنامه را برای حساب کاربری فعلی نصب می‌کند، میان‌بر آن را به Start Menu اضافه می‌کند و امکان فعال کردن «اجرا هنگام روشن کردن سیستم» را می‌دهد. فایل Standalone EXE را مستقیم اجرا کنید. برای نسخهٔ Portable ابتدا فایل ZIP را کامل از حالت فشرده خارج کنید و سپس EXE داخل پوشه را اجرا کنید.
 
-**Linux.** دستور زیر را در پوشهٔ فایل دانلودشده اجرا کنید. سپس **Persian Typo Fixer** را از منوی برنامه‌ها باز کنید.
+**Ubuntu و Debian.** دستور زیر را در پوشهٔ فایل دانلودشده اجرا کنید.
 
 ```sh
-sudo apt install ./PersianTypoFixer-v1.4.0-linux-amd64.deb
+sudo apt install ./PersianTypoFixer-v1.5.0-linux-amd64.deb
 ```
 
 فایل‌های دانلودی Python را همراه دارند. [SHA-256 فایل‌ها][checksums] و [همهٔ فایل‌های انتشار][releases] در GitHub در دسترس‌اند.
+
+**Fedora.** پس از دانلود RPM، در همان پوشه اجرا کنید.
+
+```sh
+sudo dnf install ./PersianTypoFixer-v1.5.0-linux-x86_64.rpm
+```
+
+در Linux، **Persian Typo Fixer** را از منوی برنامه‌ها باز کنید. روی Fedora Workstation با GNOME، برای دیدن آیکون System Tray افزونهٔ [AppIndicator][fedora-indicator] را نصب و فعال کنید.
+
+پشتیبانی **Wayland آزمایشی** است و به Portalهای Global Shortcuts، Remote Desktop و Clipboard نیاز دارد. Ubuntu 26.04 با GNOME 50 و Fedora Workstation 44 با GNOME برای این مسیر در نظر گرفته شده‌اند. بار اول ثبت میان‌بر را تأیید کنید. در اولین استفاده از میان‌بر، دسترسی Keyboard و Clipboard را بدهید. سپس به کادر متن برگردید و میان‌بر را دوباره بزنید. برای تغییر میان‌بر، «تنظیمات» پنجرهٔ میان‌برهای محیط دسکتاپ را باز می‌کند.
 
 ## استفاده
 
@@ -50,7 +62,7 @@ sudo apt install ./PersianTypoFixer-v1.4.0-linux-amd64.deb
 2. بخش اشتباه متن را در یک کادر قابل ویرایش انتخاب کنید.
 3. میان‌بر پیش‌فرض <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>X</kbd> را بزنید و کلیدها را رها کنید.
 
-میان‌بر با همان کلید فیزیکی در هر دو چیدمان کار می‌کند. برای نمونه، اگر صفحه‌کلید فارسی باشد، با زدن `Ctrl` و `Alt` همراه کلید «ط» همان میان‌بر `Ctrl+Alt+X` فعال می‌شود. این رفتار برای میان‌برهای سفارشی هم برقرار است.
+در Windows و X11، میان‌بر با همان کلید فیزیکی در هر دو چیدمان کار می‌کند. برای نمونه، در چیدمان فارسی `Ctrl` و `Alt` همراه «ط» همان `Ctrl+Alt+X` است. در Wayland، تطبیق کلیدها به محیط دسکتاپ بستگی دارد.
 
 در منوی آیکون برنامه، **تنظیمات** را باز کنید و یک حرف از `A` تا `Z` و دست‌کم یکی از `Ctrl`، `Alt` یا `Shift` را انتخاب کنید. با فعال کردن **«اجرا هنگام روشن کردن سیستم»**، برنامه پس از ورود به حساب کاربری باز می‌شود.
 
@@ -64,7 +76,7 @@ sudo apt install ./PersianTypoFixer-v1.4.0-linux-amd64.deb
 <details>
 <summary><strong>سازگاری و رفع مشکل میان‌بر</strong></summary>
 
-برنامهٔ مقصد باید از `Ctrl+C` و `Ctrl+V` در کادر قابل ویرایش پشتیبانی کند. در Windows، اگر برنامهٔ مقصد با دسترسی Administrator اجرا شده، Persian Typo Fixer هم برای ارسال کلیدها به [همان سطح دسترسی][sendinput] نیاز دارد. در Linux، میان‌بر سراسری به X11 نیاز دارد.
+برنامهٔ مقصد باید از `Ctrl+C` و `Ctrl+V` در کادر قابل ویرایش پشتیبانی کند. در Windows، اگر برنامهٔ مقصد با دسترسی Administrator اجرا شده، Persian Typo Fixer هم برای ارسال کلیدها به [همان سطح دسترسی][sendinput] نیاز دارد. در Wayland، تا پایان اصلاح روی همان کادر بمانید و `Ctrl+C` یا `Ctrl+V` را برای میان‌بر اصلاح انتخاب نکنید، چون برنامه از آن‌ها برای کپی و چسباندن استفاده می‌کند.
 
 اگر میان‌بر در اختیار برنامهٔ دیگری است، از **تنظیمات** ترکیب دیگری انتخاب کنید. در متن ترکیبی، چیدمان با توجه به حروف غالب تشخیص داده می‌شود. انتخاب بخش کوتاه و مشخص، نتیجه را قابل پیش‌بینی‌تر می‌کند.
 
@@ -84,7 +96,8 @@ sudo apt install ./PersianTypoFixer-v1.4.0-linux-amd64.deb
 | **Win32 API** | ثبت میان‌بر سراسری و ارسال کلیدها در Windows |
 | **Python Xlib و XKB** | میان‌بر، Clipboard و خواندن چیدمان صفحه‌کلید در Linux X11 |
 | **PyInstaller** | بسته‌بندی برنامه و وابستگی‌ها برای هر دو سیستم‌عامل |
-| **Inno Setup و dpkg-deb** | ساخت نصاب EXE برای Windows و بستهٔ DEB برای Linux |
+| **XDG Desktop Portal و dbus-next** | میان‌بر و Clipboard در Wayland |
+| **Inno Setup، dpkg-deb و rpmbuild** | ساخت نصاب EXE، DEB و RPM |
 
 ## توسعه و ساخت
 
@@ -125,7 +138,7 @@ python main.py
 ```sh
 python -m PyInstaller --noconfirm --clean packaging/linux.spec
 python tools/package_linux.py
-sudo apt install ./dist/release/PersianTypoFixer-v1.4.0-linux-amd64.deb
+sudo apt install ./dist/release/PersianTypoFixer-v1.5.0-linux-amd64.deb
 xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
   python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
 ```
@@ -143,14 +156,17 @@ GitHub Actions بستهٔ Windows را می‌سازد، بستهٔ Linux را �
 [website]: https://persiantypefixer.ghotbani.ir/
 [issues]: https://github.com/salehghotbani/PersianTypeFixer/issues
 [releases]: https://github.com/salehghotbani/PersianTypeFixer/releases/latest
-[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.4.0/PersianTypoFixer-v1.4.0-windows-x64-setup.exe
-[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.4.0/PersianTypoFixer-v1.4.0-windows-x64.exe
-[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.4.0/PersianTypoFixer-v1.4.0-windows-x64-portable.zip
-[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.4.0/PersianTypoFixer-v1.4.0-linux-amd64.deb
-[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.4.0/SHA256SUMS.txt
+[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.5.0/PersianTypoFixer-v1.5.0-windows-x64-setup.exe
+[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.5.0/PersianTypoFixer-v1.5.0-windows-x64.exe
+[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.5.0/PersianTypoFixer-v1.5.0-windows-x64-portable.zip
+[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.5.0/PersianTypoFixer-v1.5.0-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.5.0/PersianTypoFixer-v1.5.0-linux-x86_64.rpm
+[fedora-indicator]: https://packages.fedoraproject.org/pkgs/gnome-shell-extension-appindicator/gnome-shell-extension-appindicator/
+[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.5.0/SHA256SUMS.txt
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/PersianTypeFixer?label=Release&color=2454e6
 [windows-badge]: https://img.shields.io/badge/Windows-x64-2563eb
-[linux-badge]: https://img.shields.io/badge/Linux-X11%20%7C%20amd64-16836b?logo=linux&logoColor=white
+[linux-badge]: https://img.shields.io/badge/Ubuntu-DEB-16836b?logo=ubuntu&logoColor=white
+[fedora-badge]: https://img.shields.io/badge/Fedora-RPM-294172?logo=fedora&logoColor=white
 [license-badge]: https://img.shields.io/badge/License-MIT-475569
 [windows-workflow]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/windows.yml
 [linux-workflow]: https://github.com/salehghotbani/PersianTypeFixer/actions/workflows/linux.yml

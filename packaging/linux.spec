@@ -9,16 +9,19 @@ a = Analysis(
     pathex=[str(root)],
     datas=[(str(root / name), '.') for name in ('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'CHANGELOG.md')]
           + [(str(root / 'licenses'), 'licenses')]
-          + copy_metadata('python-xlib') + copy_metadata('six'),
+          + copy_metadata('python-xlib') + copy_metadata('six') + copy_metadata('dbus-next'),
     hiddenimports=['PySide6.support.deprecated'] + collect_submodules('Xlib'),
     excludes=['PySide6.QtQml', 'PySide6.QtQuick', 'PySide6.QtPdf', 'PySide6.QtOpenGL',
               'windows_api', 'single_instance', 'startup'],
 )
-# Use the user's system X11 libraries and only the Qt platform plugins we support.
+# Use the user's desktop libraries and keep the X11 and Wayland Qt plugins.
 a.exclude_system_libraries()
 a.binaries = [entry for entry in a.binaries if '/plugins/' not in entry[0]
-              or Path(entry[0]).parent.name in ('platformthemes', 'tls', 'iconengines', 'imageformats')
-              or Path(entry[0]).name in ('libqxcb.so', 'libqoffscreen.so')]
+              or Path(entry[0]).parent.name in ('platformthemes', 'tls', 'iconengines', 'imageformats',
+                                               'wayland-shell-integration', 'wayland-graphics-integration-client',
+                                               'wayland-decoration-client')
+              or Path(entry[0]).name in ('libqxcb.so', 'libqoffscreen.so')
+              or Path(entry[0]).name.startswith('libqwayland')]
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='PersianTypoFixer', upx=False)
 coll = COLLECT(exe, a.binaries, a.datas, name='PersianTypoFixer-linux', upx=False)

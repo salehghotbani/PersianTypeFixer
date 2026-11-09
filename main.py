@@ -56,9 +56,10 @@ class TrayMenuStyle(QProxyStyle):
 
 
 class TrayApplication(QObject):
-    def __init__(self, native=None):
+    def __init__(self, native=None, wayland=False):
         super().__init__()
-        self.native = NativeAPI() if native is None else native
+        self.wayland = wayland
+        self.trigger_description = ""
         self.is_enabled = False
         self.quitting = False
         self.cleaned_up = False
@@ -75,16 +76,23 @@ class TrayApplication(QObject):
         about_action = QAction("دربارهٔ برنامه", self)
         about_action.triggered.connect(self.open_about)
         self.menu.insertAction(self.menu.actions()[-1], about_action)
-        self.converter = SelectionConverter(
-            self.native, QtClipboard(QApplication.clipboard()), self
-        )
+        if self.wayland:
+            from wayland_session import WaylandSession
+
+            self.converter = WaylandSession(settings, self)
+            self.converter.ready_changed.connect(self.wayland_status)
+            self.converter.trigger_changed.connect(self.set_trigger_description)
+        else:
+            self.native = NativeAPI() if native is None else native
+            self.converter = SelectionConverter(self.native, QtClipboard(QApplication.clipboard()), self)
         self.converter.status_changed.connect(self.show_status)
         self.converter.finished.connect(self.conversion_finished)
-        if LINUX:
-            self.native.watch_hotkey(self.start_conversion)
-        else:
-            self.hotkey_filter = HotkeyFilter(self.start_conversion)
-            QApplication.instance().installNativeEventFilter(self.hotkey_filter)
+        if not self.wayland:
+            if LINUX:
+                self.native.watch_hotkey(self.start_conversion)
+            else:
+                self.hotkey_filter = HotkeyFilter(self.start_conversion)
+                QApplication.instance().installNativeEventFilter(self.hotkey_filter)
         QApplication.instance().aboutToQuit.connect(self.cleanup)
         self.set_enabled(True)
 
@@ -120,6 +128,9 @@ class TrayApplication(QObject):
         show_history()
 
     def open_settings(self):
+        if self.wayland:
+            self.converter.configure_shortcuts()
+            return
         from shortcut_dialog import ShortcutDialog
 
         ShortcutDialog(self.shortcut, self.change_shortcut).exec()
@@ -178,6 +189,10 @@ class TrayApplication(QObject):
         return QIcon(pixmap)
 
     def set_enabled(self, enabled):
+        if self.wayland:
+            self.toggle_action.setEnabled(False)
+            self.converter.set_enabled(enabled, self.shortcut)
+            return
         try:
             if enabled:
                 self.native.register_hotkey(self.shortcut)
@@ -196,9 +211,20 @@ class TrayApplication(QObject):
         self.tray.setIcon(self.create_app_icon(self.is_enabled))
         self.show_status(message)
 
+    def wayland_status(self, enabled, message):
+        self.toggle_action.setEnabled(True)
+        self.update_enabled_status(enabled, message)
+
+    def set_trigger_description(self, description):
+        self.trigger_description = description
+        self.show_status(self.last_status)
+
     def show_status(self, message):
         self.last_status = message
-        state = f"فعال — \u2066{self.shortcut}\u2069" if self.is_enabled else "غیرفعال"
+        if "--verbose" in sys.argv:
+            print(message, file=sys.stderr, flush=True)
+        trigger = self.trigger_description or self.shortcut
+        state = f"فعال — \u2066{trigger}\u2069" if self.is_enabled else "غیرفعال"
         self.tray.setToolTip(f"{APP_NAME}\n{state}\n{message}")
 
     def toggle_enabled(self):
@@ -226,6 +252,9 @@ class TrayApplication(QObject):
     def exit_application(self):
         self.quitting = True
         self.updates.stop()
+        if self.wayland:
+            QApplication.quit()
+            return
         self.set_enabled(False)
         # Let an already queued paste consume the clipboard before exiting.
         if not self.converter.busy:
@@ -234,7 +263,7 @@ class TrayApplication(QObject):
     def conversion_finished(self):
         if self.quitting:
             QApplication.quit()
-        elif self.is_enabled and not self.cleaned_up and not self.native.registered:
+        elif not self.wayland and self.is_enabled and not self.cleaned_up and not self.native.registered:
             self.set_enabled(True)
 
     def cleanup(self):
@@ -242,6 +271,10 @@ class TrayApplication(QObject):
             return
         self.cleaned_up = True
         self.updates.stop()
+        if self.wayland:
+            self.converter.close()
+            self.tray.hide()
+            return
         self.converter.cancel(force=True)
         try:
             self.native.unregister_hotkey()
@@ -258,11 +291,15 @@ def main():
     if sys.argv[1:] == ["--version"]:
         print(f"{APP_NAME} {VERSION}")
         return 0
+    wayland = False
     if LINUX:
         session = os.environ.get("XDG_SESSION_TYPE", "").lower()
-        if session == "wayland" or (not session and os.environ.get("WAYLAND_DISPLAY")) or not os.environ.get("DISPLAY"):
-            print("Persian Typo Fixer requires an X11 desktop session on Linux.", file=sys.stderr)
+        wayland = session == "wayland" or (not session and bool(os.environ.get("WAYLAND_DISPLAY")))
+        if not wayland and not os.environ.get("DISPLAY"):
+            print("Persian Typo Fixer requires a graphical desktop session on Linux.", file=sys.stderr)
             return 1
+        if wayland:
+            os.environ.setdefault("QT_QPA_PLATFORM", "wayland")
     instance = SingleInstance()
     if instance.already_running:
         instance.close()
@@ -274,10 +311,10 @@ def main():
         app.setQuitOnLastWindowClosed(False)
         if LINUX:
             app.setDesktopFileName(DESKTOP_ID)
-            if app.platformName() != "xcb":
-                print("Persian Typo Fixer requires the Qt X11 (xcb) platform.", file=sys.stderr)
+            if not (app.platformName().startswith("wayland") if wayland else app.platformName() == "xcb"):
+                print("The Qt platform does not match the Linux desktop session.", file=sys.stderr)
                 return 1
-        controller = TrayApplication()
+        controller = TrayApplication(wayland=wayland)
         app.setWindowIcon(controller.tray.icon())
         controller.tray.show()
         if "--update-install-failed" in sys.argv:

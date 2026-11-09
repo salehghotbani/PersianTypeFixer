@@ -3,6 +3,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtNetwork import QNetworkProxy
@@ -15,6 +16,22 @@ DIGEST = hashlib.sha256(INSTALLER).hexdigest()
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_selects_linux_installer_for_the_distribution(self):
+        tag = "v1.5.0"
+        assets = []
+        for suffix in ("amd64.deb", "x86_64.rpm"):
+            name = f"PersianTypoFixer-{tag}-linux-{suffix}"
+            assets.append({
+                "name": name, "state": "uploaded", "size": len(INSTALLER),
+                "digest": f"sha256:{DIGEST}",
+                "browser_download_url": f"https://github.com/{REPO}/releases/download/{tag}/{name}",
+            })
+        for distro, index in (("ubuntu", 0), ("fedora", 1)):
+            with self.subTest(distro=distro), patch("update_download.host_platform.freedesktop_os_release",
+                                                     return_value={"ID": distro}):
+                release = parse_release({"tag_name": tag, "assets": assets}, "1.4.0", "linux")
+                self.assertEqual(release.url, assets[index]["browser_download_url"])
+
     def test_selects_newer_stable_release_and_verifiable_setup(self):
         filename = "PersianTypoFixer-v1.10.0-windows-x64-setup.exe"
         url = f"https://github.com/{REPO}/releases/download/v1.10.0/{filename}"

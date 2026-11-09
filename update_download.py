@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import platform as host_platform
 import re
 import sys
 
@@ -40,7 +41,10 @@ def parse_release(payload, current_version, platform="win32"):
         return None
 
     if platform.startswith("linux"):
-        filename = f"PersianTypoFixer-{tag}-linux-amd64.deb"
+        distro = host_platform.freedesktop_os_release()
+        rpm = distro.get("ID") == "fedora" or "fedora" in distro.get("ID_LIKE", "").split()
+        suffix = "x86_64.rpm" if rpm else "amd64.deb"
+        filename = f"PersianTypoFixer-{tag}-linux-{suffix}"
     else:
         filename = f"PersianTypoFixer-{tag}-windows-x64-setup.exe"
     url = f"https://github.com/{REPO}/releases/download/{tag}/{filename}"

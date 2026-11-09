@@ -34,14 +34,19 @@ jobs:
       - name: Install build and X11 dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils \
+          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils rpm weston \
+            libwayland-client0 libwayland-cursor0 libwayland-egl1 \
             fonts-dejavu-core libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
           python -m pip install -r requirements-build.txt
-      - name: Build the Debian installer
+      - name: Test the Wayland portal client
+        run: dbus-run-session -- python -m unittest discover -s tests -p test_wayland_portal.py -v
+      - name: Build the Debian and RPM packages
+        id: linux_packages
         run: |
           python -m PyInstaller --noconfirm --clean packaging/linux.spec
           python tools/package_linux.py
+          python tools/package_linux.py --rpm
       - name: Install and exercise the packaged app under X11
         env:
           QT_QPA_PLATFORM: xcb
@@ -50,10 +55,37 @@ jobs:
           sudo apt-get install -y ./dist/release/*.deb
           /opt/persiantypefixer/PersianTypoFixer --version
           xvfb-run -a -s '-screen 0 1280x720x24 -noreset' python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
+      - name: Start the installed app with native Wayland
+        if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
+        run: dbus-run-session -- bash tests/linux_wayland_smoke.sh headless-backend.so
+      - name: Install and start the RPM on Fedora
+        if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$PWD/dist/release:/packages:ro" \
+            -v "$PWD/tests/linux_wayland_smoke.sh:/wayland-smoke.sh:ro" fedora:44 bash -euxc '
+            dnf -y install /packages/*.rpm xorg-x11-server-Xvfb xorg-x11-xauth dbus-daemon weston
+            /opt/persiantypefixer/PersianTypoFixer --version
+            XDG_SESSION_TYPE=x11 QT_QPA_PLATFORM=xcb xvfb-run -a bash -c "
+              rc=0; timeout 4s /opt/persiantypefixer/PersianTypoFixer || rc=\$?; test \"\$rc\" -eq 124
+            "
+            dbus-run-session -- bash /wayland-smoke.sh headless
+          '
+      - name: Install and start the DEB on Ubuntu 26.04
+        if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$PWD/dist/release:/packages:ro" \
+            -v "$PWD/tests/linux_wayland_smoke.sh:/wayland-smoke.sh:ro" ubuntu:26.04 bash -euxc '
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y /packages/*.deb dbus-daemon weston
+            /opt/persiantypefixer/PersianTypoFixer --version
+            dbus-run-session -- bash /wayland-smoke.sh headless
+          '
       - uses: actions/upload-artifact@v7.0.2
         if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts)
         with:
           name: PersianTypoFixer-linux-amd64
-          path: dist/release/*.deb
+          path: |
+            dist/release/*.deb
+            dist/release/*.rpm
           if-no-files-found: error
           retention-days: 7
