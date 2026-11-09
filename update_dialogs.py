@@ -4,7 +4,7 @@ import ctypes
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QImage, QPalette, QTextDocument
+from PySide6.QtGui import QColor, QImage, QPalette, QTextCursor, QTextDocument
 from PySide6.QtWidgets import (
     QApplication, QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QTextBrowser, QVBoxLayout,
 )
@@ -24,7 +24,7 @@ LIGHT = {"background": "#F7FAFF", "text": "#132745", "muted": "#405778",
          "warning_bg": "#FFF0DA", "warning_text": "#7B3A00"}
 
 THEME = """
-QDialog#updateDialog {{ background: {background}; }}
+QDialog#updateDialog, QDialog#dashboard {{ background: {background}; }}
 QLabel {{ color: {text}; font-size: 14px; }}
 QLabel#title {{ font-size: 24px; font-weight: 700; }}
 QLabel#description {{ color: {muted}; }}
@@ -79,10 +79,12 @@ class ReleaseNotesDocument(QTextDocument):
         return QImage()
 
 
-class UpdateDialog(QDialog):
-    def __init__(self, title, status, description, version=None, warning=False):
+class ThemedDialog(QDialog):
+    extra_theme = ""
+
+    def __init__(self, title, object_name):
         super().__init__()
-        self.setObjectName("updateDialog")
+        self.setObjectName(object_name)
         self.setWindowTitle(title)
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         self.setLayoutDirection(Qt.RightToLeft)
@@ -90,6 +92,44 @@ class UpdateDialog(QDialog):
         self.apply_theme()
         QApplication.styleHints().colorSchemeChanged.connect(self.apply_theme)
         QApplication.instance().paletteChanged.connect(self.apply_theme)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.apply_caption()
+
+    def apply_theme(self, *_):
+        scheme = QApplication.styleHints().colorScheme()
+        palette = QApplication.palette()
+        dark = scheme == Qt.ColorScheme.Dark or (
+            scheme == Qt.ColorScheme.Unknown and palette.color(QPalette.Window).lightness() < 128
+        )
+        colors = DARK if dark else LIGHT
+        if self.colors is colors:
+            return
+        self.colors = colors
+        palette = QPalette()
+        palette.setColor(QPalette.Link, QColor(colors["link"]))
+        self.setPalette(palette)
+        self.setStyleSheet((THEME + self.extra_theme).format(**colors))
+        if self.isVisible():
+            self.apply_caption()
+
+    def apply_caption(self):
+        if sys.platform == "win32" and QApplication.platformName() == "windows":
+            # The explicit caption colors are supported by Windows 11.
+            hwnd = ctypes.c_void_p(int(self.winId()))
+            for attribute, role in ((DWMWA_CAPTION_COLOR, "background"), (DWMWA_TEXT_COLOR, "text")):
+                color = self.colors[role]
+                rgb = bytes.fromhex(color[1:])
+                colorref = ctypes.c_uint32(int.from_bytes(rgb, "little"))
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, attribute, ctypes.byref(colorref), ctypes.sizeof(colorref),
+                )
+
+
+class UpdateDialog(ThemedDialog):
+    def __init__(self, title, status, description, version=None, warning=False):
+        super().__init__(title, "updateDialog")
         self.setMinimumWidth(360)
 
         self.content = QVBoxLayout(self)
@@ -126,39 +166,6 @@ class UpdateDialog(QDialog):
         self.content.addLayout(row)
         cancel.setFocus()
 
-    def showEvent(self, event):
-        super().showEvent(event)
-        self.apply_caption()
-
-    def apply_theme(self, *_):
-        scheme = QApplication.styleHints().colorScheme()
-        palette = QApplication.palette()
-        dark = scheme == Qt.ColorScheme.Dark or (
-            scheme == Qt.ColorScheme.Unknown and palette.color(QPalette.Window).lightness() < 128
-        )
-        colors = DARK if dark else LIGHT
-        if self.colors is colors:
-            return
-        self.colors = colors
-        palette = QPalette()
-        palette.setColor(QPalette.Link, QColor(colors["link"]))
-        self.setPalette(palette)
-        self.setStyleSheet(THEME.format(**colors))
-        if self.isVisible():
-            self.apply_caption()
-
-    def apply_caption(self):
-        if sys.platform == "win32" and QApplication.platformName() == "windows":
-            # The explicit caption colors are supported by Windows 11.
-            hwnd = ctypes.c_void_p(int(self.winId()))
-            for attribute, role in ((DWMWA_CAPTION_COLOR, "background"), (DWMWA_TEXT_COLOR, "text")):
-                color = self.colors[role]
-                rgb = bytes.fromhex(color[1:])
-                colorref = ctypes.c_uint32(int.from_bytes(rgb, "little"))
-                ctypes.windll.dwmapi.DwmSetWindowAttribute(
-                    hwnd, attribute, ctypes.byref(colorref), ctypes.sizeof(colorref),
-                )
-
 
 def release_dialog(release, linux=False):
     description = ("تغییرات را بخوانید و بستهٔ نصب را از صفحهٔ انتشار بگیرید." if linux
@@ -192,6 +199,7 @@ def notes_browser(markdown, accessible_name):
         markdown,
         QTextDocument.MarkdownDialectGitHub | QTextDocument.MarkdownNoHTML,
     )
+    notes.moveCursor(QTextCursor.Start)
     return notes
 
 

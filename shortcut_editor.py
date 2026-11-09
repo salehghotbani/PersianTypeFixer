@@ -1,22 +1,26 @@
-"""Edit the global shortcut from the tray settings."""
+"""Edit the global shortcut in the settings page."""
 
 from string import ascii_uppercase
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QPushButton
+from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from shortcut import DEFAULT_SHORTCUT, MODIFIERS, Shortcut
-from update_dialogs import UpdateDialog, label
+from update_dialogs import label
 
 
-class ShortcutDialog(UpdateDialog):
+class ShortcutEditor(QWidget):
     def __init__(self, current, save):
-        super().__init__(
-            "تنظیمات", "میان‌بر اصلاح متن",
+        super().__init__()
+        content = QVBoxLayout(self)
+        content.setContentsMargins(0, 0, 0, 0)
+        hint = label(
             "یک حرف از چیدمان انگلیسی و دست‌کم یکی از کلیدهای Ctrl، Alt یا Shift را انتخاب کنید.",
+            "description",
         )
+        hint.setWordWrap(True)
+        content.addWidget(hint)
         self.save = save
-        self.resize(490, self.sizeHint().height())
         row = QHBoxLayout()
         row.setDirection(QHBoxLayout.LeftToRight)
         self.modifiers = {key: QCheckBox(key) for key in MODIFIERS}
@@ -29,17 +33,24 @@ class ShortcutDialog(UpdateDialog):
         self.letter.addItems(list(ascii_uppercase))
         row.addWidget(self.letter)
         row.addStretch()
-        self.content.addLayout(row)
+        content.addLayout(row)
 
         self.validation = label("", "validation")
         self.validation.setWordWrap(True)
         self.validation.hide()
-        self.content.addWidget(self.validation)
+        content.addWidget(self.validation)
+        actions = QHBoxLayout()
+        apply = QPushButton("ذخیرهٔ میان‌بر")
+        apply.setObjectName("primary")
+        apply.setAutoDefault(False)
+        apply.clicked.connect(self.apply_shortcut)
+        actions.addWidget(apply)
         restore = QPushButton("بازگردانی پیش‌فرض")
         restore.setAutoDefault(False)
         restore.clicked.connect(lambda: self.set_shortcut(DEFAULT_SHORTCUT))
-        self.content.addWidget(restore, alignment=Qt.AlignRight | Qt.AlignAbsolute)
-        self.add_actions("انصراف", primary="ذخیره")
+        actions.addWidget(restore)
+        actions.addStretch()
+        content.addLayout(actions)
         self.set_shortcut(current)
 
     def set_shortcut(self, shortcut):
@@ -48,7 +59,7 @@ class ShortcutDialog(UpdateDialog):
             checkbox.setChecked(key in shortcut.modifiers)
         self.validation.hide()
 
-    def accept(self):
+    def apply_shortcut(self):
         try:
             modifiers = frozenset(key for key, box in self.modifiers.items() if box.isChecked())
             self.save(Shortcut(self.letter.currentText(), modifiers))
@@ -56,4 +67,4 @@ class ShortcutDialog(UpdateDialog):
             self.validation.setText(str(error))
             self.validation.show()
         else:
-            super().accept()
+            self.validation.hide()
