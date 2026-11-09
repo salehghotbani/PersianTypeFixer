@@ -50,7 +50,7 @@ class Dashboard(ThemedDialog):
         self.navigation.addItems(["تنظیمات", "به‌روزرسانی", "دربارهٔ برنامه"])
         self.navigation.setSpacing(3)
         sidebar_content.addWidget(self.navigation, 1)
-        sidebar_content.addWidget(self.action_button(controller.exit_action))
+        sidebar_content.addWidget(self.action_button(controller.exit_action, sidebar))
         body.addWidget(sidebar)
 
         self.pages = QStackedWidget()
@@ -75,8 +75,8 @@ class Dashboard(ThemedDialog):
         return page, layout
 
     @staticmethod
-    def action_button(action, primary=False):
-        button = QPushButton()
+    def action_button(action, parent, primary=False):
+        button = QPushButton(parent)
         button.setAutoDefault(False)
         if primary:
             button.setObjectName("primary")
@@ -129,8 +129,8 @@ class Dashboard(ThemedDialog):
     def updates_page(self):
         page, layout = self.page("به‌روزرسانی", f"نسخهٔ نصب‌شده \u2066{VERSION}\u2069")
         actions = QHBoxLayout()
-        actions.addWidget(self.action_button(self.controller.updates.action, primary=True))
-        actions.addWidget(self.action_button(self.controller.updates.available_action))
+        actions.addWidget(self.action_button(self.controller.updates.action, page, primary=True))
+        actions.addWidget(self.action_button(self.controller.updates.available_action, page))
         actions.addStretch()
         layout.addLayout(actions)
         layout.addWidget(label("تاریخچهٔ نسخه‌ها", "section"))

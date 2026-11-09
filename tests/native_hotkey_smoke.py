@@ -16,7 +16,7 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PySide6.QtCore import QSettings, QTimer
-from PySide6.QtWidgets import QApplication, QCheckBox, QSystemTrayIcon, QTextBrowser
+from PySide6.QtWidgets import QApplication, QCheckBox, QPushButton, QSystemTrayIcon, QTextBrowser
 
 from main import TrayApplication
 from shortcut import Shortcut
@@ -78,12 +78,12 @@ def exercise(app, custom):
             controller.toggle_action.trigger()
             assert controller.is_enabled and controller.native.registered
             assert controller.toggle_action.isChecked()
-            exercise_dashboard(app, controller, changed)
+            exit_button = exercise_dashboard(app, controller, changed)
         except Exception as error:
             errors.append(error)
             app.quit()
         else:
-            controller.menu.actions()[-1].trigger()
+            exit_button.click()
 
     def timed_out():
         errors.append(TimeoutError("The tray Exit action did not stop the application"))
@@ -112,6 +112,7 @@ def exercise_dashboard(app, controller, changed):
     controller.open_settings()
     window = controller.dashboard
     assert window.isVisible() and window.pages.currentIndex() == 0
+    assert [widget for widget in app.topLevelWidgets() if widget.isVisible()] == [window]
     assert str(changed) in window.current_shortcut.text()
     settings_page = window.pages.currentWidget()
     checkboxes = {box.text(): box for box in settings_page.findChildren(QCheckBox)}
@@ -127,6 +128,13 @@ def exercise_dashboard(app, controller, changed):
     controller.open_history()
     assert controller.dashboard is window and window.pages.currentIndex() == 1
     assert "1.0.0" in window.pages.currentWidget().findChild(QTextBrowser).toPlainText()
+    check = next(button for button in window.pages.currentWidget().findChildren(QPushButton)
+                 if button.text() == controller.updates.action.text())
+    client = Mock()
+    controller.updates.start_client = Mock(return_value=client)
+    check.click()
+    client.check.assert_called_once()
+    assert not check.isEnabled()
     controller.open_about()
     assert controller.dashboard is window and window.pages.currentIndex() == 2
     window.navigation.setCurrentRow(0)
@@ -134,6 +142,8 @@ def exercise_dashboard(app, controller, changed):
     window.close()
     app.processEvents()
     assert not window.isVisible() and not controller.quitting and controller.native.registered
+    controller.open_settings()
+    return next(button for button in window.findChildren(QPushButton) if button.text() == "خروج")
 
 
 if __name__ == "__main__":
