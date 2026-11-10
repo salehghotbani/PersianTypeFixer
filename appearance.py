@@ -5,6 +5,7 @@ from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import QApplication
 
 THEMES = (("system", "مطابق سیستم"), ("light", "روشن"), ("dark", "تیره"))
+CHECKED_BLUE = "#2563EB"
 
 
 class Appearance(QObject):

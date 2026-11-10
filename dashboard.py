@@ -3,12 +3,12 @@
 from PySide6.QtCore import QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QButtonGroup, QCheckBox, QFrame, QHBoxLayout, QListWidget, QListWidgetItem, QPushButton,
+    QApplication, QButtonGroup, QCheckBox, QFrame, QHBoxLayout, QListWidget, QListWidgetItem, QPushButton,
     QScrollArea, QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from about_panel import add_about, version_history
-from appearance import THEMES
+from appearance import CHECKED_BLUE, THEMES
 from app_version import APP_NAME, VERSION
 from shortcut_editor import ShortcutEditor
 from update_dialogs import ThemedDialog, label
@@ -55,7 +55,7 @@ class ToggleSwitch(QCheckBox):
         if not self.isEnabled():
             painter.setOpacity(0.5)
         painter.setPen(Qt.NoPen)
-        painter.setBrush(palette.highlight() if self.isChecked() else palette.mid())
+        painter.setBrush(QColor(CHECKED_BLUE) if self.isChecked() else palette.mid())
         painter.drawRoundedRect(track, 11, 11)
         painter.setBrush(QColor("#FFFFFF"))
         painter.drawEllipse(QRectF(24 if self.isChecked() else 6, 7, 16, 16))
@@ -239,10 +239,20 @@ class Dashboard(ThemedDialog):
         heading.addWidget(self.current_shortcut)
         content.addLayout(heading)
         if self.controller.wayland:
-            button = QPushButton("تنظیم میان‌بر در سیستم")
-            button.setAutoDefault(False)
-            button.clicked.connect(self.controller.converter.configure_shortcuts)
-            content.addWidget(button, alignment=Qt.AlignRight | Qt.AlignAbsolute)
+            self.portal_shortcut_button = QPushButton("تنظیم میان‌بر در سیستم")
+            self.portal_shortcut_button.setAutoDefault(False)
+            self.portal_shortcut_button.clicked.connect(self.controller.converter.configure_shortcuts)
+            content.addWidget(self.portal_shortcut_button, alignment=Qt.AlignRight | Qt.AlignAbsolute)
+            self.desktop_shortcut_hint = label(
+                "در Settings ← Keyboard ← View and Customize Shortcuts ← Custom Shortcuts یک میان‌بر بسازید. "
+                "فرمان زیر را در کادر Command بچسبانید و کلیدهای دلخواه را ثبت کنید.", "description",
+            )
+            self.desktop_shortcut_hint.setWordWrap(True)
+            content.addWidget(self.desktop_shortcut_hint)
+            self.copy_shortcut_button = QPushButton("کپی فرمان میان‌بر")
+            self.copy_shortcut_button.setAutoDefault(False)
+            self.copy_shortcut_button.clicked.connect(self.copy_shortcut_command)
+            content.addWidget(self.copy_shortcut_button, alignment=Qt.AlignRight | Qt.AlignAbsolute)
         else:
             self.editor = ShortcutEditor(self.controller.shortcut, self.controller.change_shortcut)
             content.addWidget(self.editor)
@@ -250,6 +260,10 @@ class Dashboard(ThemedDialog):
         stack.addWidget(self.appearance_card())
         stack.addStretch()
         return page
+
+    def copy_shortcut_command(self):
+        QApplication.clipboard().setText(self.controller.converter.shortcut_command)
+        self.controller.show_status("فرمان میان‌بر کپی شد.")
 
     def appearance_card(self):
         card, layout = self.card()
@@ -312,6 +326,11 @@ class Dashboard(ThemedDialog):
     def refresh_status(self):
         trigger = self.controller.trigger_description or self.controller.shortcut
         self.current_shortcut.setText(str(trigger))
+        if self.controller.wayland:
+            manual = self.controller.converter.desktop_shortcut
+            self.portal_shortcut_button.setVisible(not manual)
+            self.desktop_shortcut_hint.setVisible(manual)
+            self.copy_shortcut_button.setVisible(manual)
         message = self.controller.last_status
         self.status.setText(message)
         self.status.setVisible(bool(message) and not message.startswith("وضعیت:"))

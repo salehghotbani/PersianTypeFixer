@@ -36,7 +36,7 @@
 **Ubuntu و Debian.** دستور زیر را در پوشهٔ فایل دانلودشده اجرا کنید.
 
 ```sh
-sudo apt install ./PersianTypoFixer-v1.6.2-linux-amd64.deb
+sudo apt install ./PersianTypoFixer-v1.6.3-linux-amd64.deb
 ```
 
 فایل‌های دانلودی Python را همراه دارند. [SHA-256 فایل‌ها][checksums] و [همهٔ فایل‌های انتشار][releases] در GitHub در دسترس‌اند.
@@ -44,12 +44,20 @@ sudo apt install ./PersianTypoFixer-v1.6.2-linux-amd64.deb
 **Fedora.** پس از دانلود RPM، در همان پوشه اجرا کنید.
 
 ```sh
-sudo dnf install ./PersianTypoFixer-v1.6.2-linux-x86_64.rpm
+sudo dnf install ./PersianTypoFixer-v1.6.3-linux-x86_64.rpm
 ```
 
 در Linux، **Persian Typo Fixer** را از منوی برنامه‌ها باز کنید. روی Fedora Workstation با GNOME، برای دیدن آیکون System Tray افزونهٔ [AppIndicator][fedora-indicator] را نصب و فعال کنید.
 
-پشتیبانی **Wayland آزمایشی** است و به Portalهای Global Shortcuts، Remote Desktop و Clipboard نیاز دارد. Ubuntu 26.04 با GNOME 50 و Fedora Workstation 44 با GNOME برای این مسیر در نظر گرفته شده‌اند. بار اول ثبت میان‌بر را تأیید کنید. در اولین استفاده از میان‌بر، دسترسی Keyboard و Clipboard را بدهید. سپس به کادر متن برگردید و میان‌بر را دوباره بزنید. برای تغییر میان‌بر، در صفحهٔ «عمومی» دکمهٔ «تنظیم میان‌بر در سیستم» را بزنید.
+پشتیبانی **Wayland آزمایشی** است و به Portalهای Remote Desktop و Clipboard نیاز دارد. در محیط‌های دارای Global Shortcuts، مانند GNOME 50، بار اول ثبت میان‌بر را تأیید کنید. برای تغییر آن، در صفحهٔ «عمومی» روی «تنظیم میان‌بر در سیستم» بزنید.
+
+### میان‌بر Wayland در Ubuntu 24.04
+
+GNOME 46 ثبت خودکار میان‌بر توسط برنامه را ندارد. یک بار این مراحل را انجام دهید.
+
+1. از منوی کنار ساعت «تنظیمات» را باز کنید. در صفحهٔ «عمومی»، «فعال‌بودن اصلاح متن» را روشن کنید و «کپی فرمان میان‌بر» را بزنید.
+2. در **Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts**، یک میان‌بر جدید بسازید. در قسمت **Command** فرمان کپی‌شده را بچسبانید و کلیدهای دلخواه، مثلاً `Ctrl+Alt+X`، را ثبت کنید.
+3. بار اولی که میان‌بر را می‌زنید، دسترسی Keyboard و Clipboard را تأیید کنید. سپس به کادر متن برگردید، متن را انتخاب کنید و دوباره میان‌بر را بزنید. همین مرحلهٔ تأیید در نسخه‌های جدیدتر Wayland هم لازم است.
 
 ## استفاده
 
@@ -66,7 +74,7 @@ sudo dnf install ./PersianTypoFixer-v1.6.2-linux-x86_64.rpm
 
 با کلیک چپ یا راست روی آیکون برنامه، منوی **System Tray** باز می‌شود. اولین گزینه، **تنظیمات**، پنجرهٔ برنامه را باز می‌کند. از نوار کناری به این بخش‌ها دسترسی دارید.
 
-- **عمومی** شامل فعال‌بودن، اجرای خودکار، تغییر میان‌بر و ظاهر برنامه است. در «ظاهر برنامه» تم روشن، تیره یا مطابق سیستم را انتخاب کنید. برای میان‌بر یک حرف از `A` تا `Z` و دست‌کم یکی از `Ctrl`، `Alt` یا `Shift` انتخاب کنید. در Wayland، دکمهٔ تنظیم میان‌بر تنظیمات سیستم را باز می‌کند.
+- **عمومی** شامل فعال‌بودن، اجرای خودکار، تغییر میان‌بر و ظاهر برنامه است. در «ظاهر برنامه» تم روشن، تیره یا مطابق سیستم را انتخاب کنید. برای میان‌بر یک حرف از `A` تا `Z` و دست‌کم یکی از `Ctrl`، `Alt` یا `Shift` انتخاب کنید. در Wayland، میان‌بر از تنظیمات محیط دسکتاپ تغییر می‌کند.
 - **به‌روزرسانی** بررسی نسخهٔ جدید و تاریخچهٔ آفلاین نسخه‌ها را کنار هم نشان می‌دهد.
 - **دربارهٔ برنامه** نسخه، نام سازنده، مجوز و لینک کد منبع را نشان می‌دهد.
 
@@ -142,7 +150,7 @@ python main.py
 ```sh
 python -m PyInstaller --noconfirm --clean packaging/linux.spec
 python tools/package_linux.py
-sudo apt install ./dist/release/PersianTypoFixer-v1.6.2-linux-amd64.deb
+sudo apt install ./dist/release/PersianTypoFixer-v1.6.3-linux-amd64.deb
 xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
   python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
 ```
@@ -160,13 +168,13 @@ GitHub Actions بستهٔ Windows را می‌سازد، بستهٔ Linux را �
 [website]: https://persiantypefixer.ghotbani.ir/
 [issues]: https://github.com/salehghotbani/PersianTypeFixer/issues
 [releases]: https://github.com/salehghotbani/PersianTypeFixer/releases/latest
-[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.2/PersianTypoFixer-v1.6.2-windows-x64-setup.exe
-[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.2/PersianTypoFixer-v1.6.2-windows-x64.exe
-[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.2/PersianTypoFixer-v1.6.2-windows-x64-portable.zip
-[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.2/PersianTypoFixer-v1.6.2-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.2/PersianTypoFixer-v1.6.2-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.3/PersianTypoFixer-v1.6.3-windows-x64-setup.exe
+[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.3/PersianTypoFixer-v1.6.3-windows-x64.exe
+[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.3/PersianTypoFixer-v1.6.3-windows-x64-portable.zip
+[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.3/PersianTypoFixer-v1.6.3-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.3/PersianTypoFixer-v1.6.3-linux-x86_64.rpm
 [fedora-indicator]: https://packages.fedoraproject.org/pkgs/gnome-shell-extension-appindicator/gnome-shell-extension-appindicator/
-[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.2/SHA256SUMS.txt
+[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.3/SHA256SUMS.txt
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/PersianTypeFixer?label=Release&color=2454e6
 [windows-badge]: https://img.shields.io/badge/Windows-x64-2563eb
 [linux-badge]: https://img.shields.io/badge/Ubuntu-DEB-16836b?logo=ubuntu&logoColor=white

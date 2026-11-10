@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import shlex
 import sys
 import unittest
 from types import SimpleNamespace
@@ -14,7 +15,7 @@ from dbus_next import Message, MessageType, Variant
 from dbus_next.aio import MessageBus
 
 from shortcut import DEFAULT_SHORTCUT
-from wayland_portal import PATH, PREFIX, SERVICE, TEXT_TYPES, WaylandPortal
+from wayland_portal import PATH, PREFIX, SERVICE, SHORTCUT_COMMAND, TEXT_TYPES, PortalError, WaylandPortal
 
 
 class FakePortal:
@@ -27,6 +28,8 @@ class FakePortal:
         self.keep_newer = False
         self.read_pipe = None
         self.calls = []
+        self.global_shortcuts = True
+        self.clipboard_supported = True
 
     def signal(self, interface, member, signature, body, path=PATH):
         self.bus.send(Message(
@@ -46,6 +49,14 @@ class FakePortal:
         self.client = message.sender
         self.calls.append(message.member)
         member, args = message.member, message.body
+        if member == "Introspect":
+            interfaces = ["RemoteDesktop"]
+            if self.clipboard_supported:
+                interfaces.append("Clipboard")
+            if self.global_shortcuts:
+                interfaces.append("GlobalShortcuts")
+            xml = "".join(f'<interface name="{PREFIX}{name}"/>' for name in interfaces)
+            return Message.new_method_return(message, "s", [f"<node>{xml}</node>"])
         if member == "Register":
             assert message.path == PATH and args[0] == "ir.ghotbani.persiantypefixer"
         elif member in ("CreateSession", "BindShortcuts", "SelectDevices", "Start"):
@@ -107,6 +118,7 @@ class WaylandPortalTests(unittest.IsolatedAsyncioTestCase):
         await self.bus.request_name(SERVICE)
         self.events = SimpleNamespace(**{name: Mock() for name in (
             "activated", "ready_changed", "status_changed", "token_changed", "trigger_changed",
+            "desktop_shortcut_changed",
         )})
         self.portal = WaylandPortal(self.events)
         await self.portal.enable(DEFAULT_SHORTCUT)
@@ -143,3 +155,38 @@ class WaylandPortalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.fake.paste.decode("utf-8"), "سلام")
         self.assertFalse(self.portal.owned)
         self.assertEqual(self.fake.calls.count("SetSelection"), 1)
+
+    async def test_custom_gnome_shortcut_without_global_shortcuts_portal(self):
+        async def activate():
+            process = await asyncio.create_subprocess_exec(
+                *shlex.split(SHORTCUT_COMMAND), stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            output, error = await asyncio.wait_for(process.communicate(), 5)
+            return process.returncode, output, error
+
+        await self.portal.disable()
+        self.fake.global_shortcuts = False
+        self.fake.calls.clear()
+        await self.portal.enable(DEFAULT_SHORTCUT)
+        self.events.desktop_shortcut_changed.emit.assert_called_once_with(True)
+        self.assertNotIn("BindShortcuts", self.fake.calls)
+        self.assertEqual(await activate(), (0, b"(true,)\n", b""))
+        self.events.activated.emit.assert_called_once()
+        await self.portal.convert("")
+        await self.portal.convert("fixture")
+        self.assertEqual(self.fake.paste.decode("utf-8"), "سلام")
+
+        await self.portal.disable()
+        code, _, _ = await activate()
+        self.assertNotEqual(code, 0)
+        self.events.activated.emit.assert_called_once()
+        await self.portal.enable(DEFAULT_SHORTCUT)
+        self.assertEqual(await activate(), (0, b"(true,)\n", b""))
+
+    async def test_missing_clipboard_portal_stays_disabled(self):
+        await self.portal.disable()
+        self.fake.clipboard_supported = False
+        with self.assertRaisesRegex(PortalError, "Clipboard"):
+            await self.portal.enable(DEFAULT_SHORTCUT)
+        self.assertFalse(self.portal.enabled)

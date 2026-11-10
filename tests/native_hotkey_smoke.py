@@ -16,10 +16,11 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from PySide6.QtCore import QSettings, QTimer
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QPushButton, QSystemTrayIcon, QTextBrowser
 
 from main import TrayApplication
-from appearance import Appearance
+from appearance import CHECKED_BLUE, Appearance
 from shortcut import Shortcut
 from update_dialogs import DARK, LIGHT, UpdateDialog
 from windows_api import HOTKEY_ID, WM_HOTKEY
@@ -119,15 +120,18 @@ def exercise_dashboard(app, controller, changed):
     assert [widget for widget in app.topLevelWidgets() if widget.isVisible()] == [window]
     assert str(changed) in window.current_shortcut.text()
     assert not any(button.text() == "خروج" for button in window.findChildren(QPushButton))
+    checkboxes = {box.text(): box for box in window.pages.currentWidget().findChildren(QCheckBox)}
     dialog = UpdateDialog("آزمون", "تم", "پیش‌نمایش", controller.appearance)
     for index, mode, colors in ((2, "dark", DARK), (1, "light", LIGHT)):
         window.theme_buttons.button(index).click()
         assert window.colors is colors and dialog.colors is colors
         assert Appearance(controller.shortcut_settings()).mode == mode
+        for name in ("فعال", "Ctrl"):
+            image = checkboxes[name].grab().toImage()
+            assert any(image.pixelColor(x, y) == QColor(CHECKED_BLUE)
+                       for x in range(image.width()) for y in range(image.height())), name
     window.theme_buttons.button(0).click()
     assert Appearance(controller.shortcut_settings()).mode == "system"
-    settings_page = window.pages.currentWidget()
-    checkboxes = {box.text(): box for box in settings_page.findChildren(QCheckBox)}
     checkboxes["فعال"].click()
     assert not controller.toggle_action.isChecked() and not checkboxes["فعال"].isChecked()
     controller.toggle_action.trigger()

@@ -4,8 +4,9 @@ import asyncio
 import os
 import uuid
 
-from dbus_next import Message, MessageType, Variant
+from dbus_next import Message, MessageType, NameFlag, RequestNameReply, Variant
 from dbus_next.aio import MessageBus
+from dbus_next.service import ServiceInterface, method
 
 from layout_conversion import convert_text
 from linux_layouts import standard_mapping
@@ -18,10 +19,27 @@ PREFIX = "org.freedesktop.portal."
 KEYBOARD = 1
 TEXT_TYPES = ("text/plain;charset=utf-8", "UTF8_STRING", "text/plain")
 MAX_CLIPBOARD = 16 * 1024 * 1024
+SHORTCUT_PATH = "/ir/ghotbani/persiantypefixer"
+SHORTCUT_INTERFACE = DESKTOP_ID + ".Shortcut"
+SHORTCUT_COMMAND = (f"gdbus call --session --dest {DESKTOP_ID} --object-path {SHORTCUT_PATH} "
+                    f"--method {SHORTCUT_INTERFACE}.CorrectSelection")
 
 
 class PortalError(OSError):
     pass
+
+
+class DesktopShortcut(ServiceInterface):
+    def __init__(self, portal):
+        super().__init__(SHORTCUT_INTERFACE)
+        self.portal = portal
+
+    @method()
+    def CorrectSelection(self) -> "b":
+        if not self.portal.enabled or self.portal.desktop_shortcut is not self:
+            return False
+        self.portal.events.activated.emit()
+        return True
 
 
 def option(options, name, default=None):
@@ -81,6 +99,7 @@ class WaylandPortal:
         self.owner = None
         self.requests = {}
         self.shortcut_session = None
+        self.desktop_shortcut = None
         self.input_session = None
         self.enabled = False
         self.armed = False
@@ -113,7 +132,8 @@ class WaylandPortal:
             try:
                 await self.call("org.freedesktop.host.portal.Registry", "Register", "sa{sv}", [DESKTOP_ID, {}])
             except PortalError as error:
-                if str(error) != "Register: org.freedesktop.DBus.Error.UnknownMethod":
+                if str(error) not in ("Register: org.freedesktop.DBus.Error.UnknownMethod",
+                                      "Register: org.freedesktop.DBus.Error.UnknownInterface"):
                     raise
             dbus = "org.freedesktop.DBus"
             params = {"path": "/org/freedesktop/DBus", "destination": dbus}
@@ -161,6 +181,13 @@ class WaylandPortal:
             if self.enabled:
                 return
             await self.connect()
+            node = await asyncio.wait_for(self.bus.introspect(SERVICE, PATH), 5)
+            interfaces = {interface.name for interface in node.interfaces}
+            if not {PREFIX + "RemoteDesktop", PREFIX + "Clipboard"} <= interfaces:
+                raise PortalError("محیط Wayland دسترسی لازم به صفحه‌کلید و Clipboard را ارائه نمی‌کند.")
+            if PREFIX + "GlobalShortcuts" not in interfaces:
+                await self.enable_desktop_shortcut()
+                return
             if not self.shortcut_session:
                 session = await self.create_session("GlobalShortcuts")
                 trigger = "+".join([*(key.upper() for key in MODIFIERS if key in shortcut.modifiers),
@@ -180,6 +207,19 @@ class WaylandPortal:
             self.enabled = True
             self.events.ready_changed.emit(True, "وضعیت: فعال")
 
+    async def enable_desktop_shortcut(self):
+        # GNOME 46 can run custom shortcut commands, but has no GlobalShortcuts portal.
+        reply = await asyncio.wait_for(self.bus.request_name(DESKTOP_ID, NameFlag.DO_NOT_QUEUE), 5)
+        if reply not in (RequestNameReply.PRIMARY_OWNER, RequestNameReply.ALREADY_OWNER):
+            raise PortalError("میان‌بر سفارشی در نشست دیگری از برنامه فعال است.")
+        shortcut = DesktopShortcut(self)
+        self.bus.export(SHORTCUT_PATH, shortcut)
+        self.desktop_shortcut = shortcut
+        self.enabled = True
+        self.events.desktop_shortcut_changed.emit(True)
+        self.events.trigger_changed.emit("میان‌بر سفارشی سیستم")
+        self.events.ready_changed.emit(True, "برای اجرای اصلاح متن، میان‌بر سفارشی را در تنظیمات سیستم ثبت کنید.")
+
     async def configure(self):
         if not self.shortcut_session:
             raise PortalError("ابتدا میان‌بر را از منوی برنامه فعال کنید.")
@@ -188,6 +228,11 @@ class WaylandPortal:
 
     async def disable(self):
         self.enabled = self.armed = False
+        if self.desktop_shortcut:
+            self.bus.unexport(SHORTCUT_PATH, self.desktop_shortcut)
+            self.desktop_shortcut = None
+            self.events.desktop_shortcut_changed.emit(False)
+            self.events.trigger_changed.emit("")
         session, self.shortcut_session = self.shortcut_session, None
         if session:
             await self.close_session(session)
