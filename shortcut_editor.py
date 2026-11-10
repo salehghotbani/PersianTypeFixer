@@ -3,12 +3,13 @@
 from string import ascii_uppercase
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QPainter, QPen
+from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QHBoxLayout, QPushButton, QStyle, QStyleOptionButton,
     QVBoxLayout, QWidget,
 )
 
+from appearance import CHECKED_BLUE
 from shortcut import DEFAULT_SHORTCUT, MODIFIERS, Shortcut
 from update_dialogs import label
 
@@ -27,7 +28,7 @@ class ModifierCheckBox(QCheckBox):
         painter.setBrush(palette.base())
         if self.isChecked():
             painter.setPen(Qt.NoPen)
-            painter.setBrush(palette.highlight())
+            painter.setBrush(QColor(CHECKED_BLUE))
         painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), 3, 3)
         if self.isChecked():
             painter.setPen(QPen(Qt.white, 1.5, Qt.SolidLine, Qt.RoundCap))

@@ -34,7 +34,7 @@ jobs:
       - name: Install build and X11 dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils rpm weston \
+          sudo apt-get install -y xvfb xauth x11-xkb-utils xclip desktop-file-utils binutils rpm weston libglib2.0-bin \
             libwayland-client0 libwayland-cursor0 libwayland-egl1 \
             fonts-dejavu-core libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
             libxcb-render-util0 libxcb-xinerama0 libxcb-xkb1 libxkbcommon-x11-0
@@ -70,16 +70,20 @@ jobs:
             "
             dbus-run-session -- bash /wayland-smoke.sh headless
           '
-      - name: Install and start the DEB on Ubuntu 26.04
+      - name: Install and start the DEB on Ubuntu 24.04 and 26.04
         if: ${{ !cancelled() && steps.linux_packages.outcome == 'success' }}
         run: |
-          docker run --rm -v "$PWD/dist/release:/packages:ro" \
-            -v "$PWD/tests/linux_wayland_smoke.sh:/wayland-smoke.sh:ro" ubuntu:26.04 bash -euxc '
-            apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y /packages/*.deb dbus-daemon weston
-            /opt/persiantypefixer/PersianTypoFixer --version
-            dbus-run-session -- bash /wayland-smoke.sh headless
-          '
+          for version in 24.04 26.04; do
+            backend=headless
+            if [ "$version" = 24.04 ]; then backend=headless-backend.so; fi
+            docker run --rm -v "$PWD/dist/release:/packages:ro" \
+              -v "$PWD/tests/linux_wayland_smoke.sh:/wayland-smoke.sh:ro" "ubuntu:$version" bash -euxc '
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y /packages/*.deb dbus-daemon weston
+              /opt/persiantypefixer/PersianTypoFixer --version
+              dbus-run-session -- bash /wayland-smoke.sh "$1"
+            ' bash "$backend"
+          done
       - uses: actions/upload-artifact@v7.0.2
         if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || (github.event_name == 'workflow_dispatch' && inputs.upload_artifacts)
         with:

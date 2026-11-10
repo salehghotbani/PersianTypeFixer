@@ -209,7 +209,10 @@ class TrayApplication(QObject):
 
     def set_enabled(self, enabled):
         if self.wayland:
+            self.toggle_action.setChecked(self.is_enabled)
             self.toggle_action.setEnabled(False)
+            if enabled:
+                self.show_status("در انتظار پاسخ محیط دسکتاپ برای فعال کردن میان‌بر…")
             self.converter.set_enabled(enabled, self.shortcut)
             return
         try:

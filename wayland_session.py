@@ -5,11 +5,13 @@ from threading import Thread
 
 from PySide6.QtCore import QObject, QSettings, Signal, Slot
 
-from wayland_portal import WaylandPortal
+from wayland_portal import SHORTCUT_COMMAND, WaylandPortal
 
 
 class WaylandSession(QObject):
+    shortcut_command = SHORTCUT_COMMAND
     ready_changed = Signal(bool, str)
+    desktop_shortcut_changed = Signal(bool)
     status_changed = Signal(str)
     trigger_changed = Signal(str)
     token_changed = Signal(str)
@@ -21,6 +23,7 @@ class WaylandSession(QObject):
         self.settings: QSettings = settings
         self.busy = False
         self.closed = False
+        self.desktop_shortcut = False
         self.loop = asyncio.new_event_loop()
         self.portal = WaylandPortal(self)
         self.thread = Thread(target=self.run, name="desktop-portal", daemon=True)
@@ -28,6 +31,7 @@ class WaylandSession(QObject):
         self.token_changed.connect(self.store_token)
         self.activated.connect(self.convert_selection)
         self.finished.connect(self.conversion_finished)
+        self.desktop_shortcut_changed.connect(self.set_desktop_shortcut)
 
     def run(self):
         self.loop.run_forever()
@@ -51,7 +55,12 @@ class WaylandSession(QObject):
         try:
             await self.portal.enable(shortcut)
         except Exception as error:
-            self.ready_changed.emit(False, f"فعال کردن میان‌بر Wayland ممکن نشد: {error}")
+            detail = str(error) or "پاسخ محیط دسکتاپ در مهلت مقرر نرسید."
+            self.ready_changed.emit(False, f"فعال کردن میان‌بر Wayland ممکن نشد: {detail}")
+
+    @Slot(bool)
+    def set_desktop_shortcut(self, enabled):
+        self.desktop_shortcut = enabled
 
     def configure_shortcuts(self):
         self.submit(self.configure())

@@ -58,7 +58,7 @@ def main():
             f"Maintainer: {METADATA['PUBLISHER']} <salehghotbani@users.noreply.github.com>\n"
             f"Section: utils\nPriority: optional\nInstalled-Size: {(size + 1023) // 1024}\n"
             f"Depends: {', '.join(DEPENDENCIES)}\nHomepage: {METADATA['PROJECT_URL']}\n"
-            "Recommends: xdg-desktop-portal\n"
+            "Recommends: xdg-desktop-portal, libglib2.0-bin\n"
             "Description: Persian and English keyboard layout fixer\n"
             " Correct selected text in X11 or in a Wayland session with a compatible desktop portal.\n",
             encoding="utf-8",
