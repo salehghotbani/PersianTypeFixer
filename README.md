@@ -159,6 +159,8 @@ xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
 
 GitHub Actions بستهٔ Windows را می‌سازد، بستهٔ Linux را نصب و در Xvfb آزمایش می‌کند و فایل‌های وب‌سایت را بررسی می‌کند. اگر workflow ساخت را دستی اجرا می‌کنید، گزینهٔ `upload_artifacts` فایل‌ها را در Artifacts همان اجرا قرار می‌دهد.
 
+برای انتشار نسخه، شمارهٔ `app_version.py` و فایل `.github/release-notes/vX.Y.Z.md` را در شاخهٔ `main` آماده کنید و workflow **Publish release** را از بخش Actions روی `main` اجرا کنید. پس از ساخت و آزمون هر دو سیستم‌عامل، فایل‌ها همراه با SHA-256 و توضیحات همان فایل Markdown در GitHub Releases منتشر می‌شوند. انتشار با توکن داخلی GitHub Actions انجام می‌شود؛ پیش‌نویس موجود تکمیل می‌شود و نسخهٔ عمومی قبلی بازنویسی نمی‌شود.
+
 ## مجوز و مشارکت
 
 ساختهٔ **Seyed Mohammad Saleh Ghotbani**. کد پروژه با [مجوز MIT](LICENSE) منتشر می‌شود. اطلاعات مجوز و کد منبع وابستگی‌ها در [Third-Party Notices](THIRD_PARTY_NOTICES.md) آمده است. برای ارسال تغییرات، [راهنمای مشارکت](CONTRIBUTING.md) را ببینید.
