@@ -6,7 +6,7 @@ import shlex
 import sys
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import ANY, Mock
 
 if not sys.platform.startswith("linux") or not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
     raise unittest.SkipTest("Requires an isolated Linux session bus")
@@ -30,6 +30,7 @@ class FakePortal:
         self.calls = []
         self.global_shortcuts = True
         self.clipboard_supported = True
+        self.extra_introspection = ""
 
     def signal(self, interface, member, signature, body, path=PATH):
         self.bus.send(Message(
@@ -56,7 +57,9 @@ class FakePortal:
             if self.global_shortcuts:
                 interfaces.append("GlobalShortcuts")
             xml = "".join(f'<interface name="{PREFIX}{name}"/>' for name in interfaces)
-            return Message.new_method_return(message, "s", [f"<node>{xml}</node>"])
+            return Message.new_method_return(message, "s", [
+                f"<node>{xml}{self.extra_introspection}</node>",
+            ])
         if member == "Register":
             assert message.path == PATH and args[0] == "ir.ghotbani.persiantypefixer"
         elif member in ("CreateSession", "BindShortcuts", "SelectDevices", "Start"):
@@ -185,6 +188,31 @@ class WaylandPortalTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(await activate(), (0, b"(true,)\n", b""))
 
     async def test_missing_clipboard_portal_stays_disabled(self):
+        await self.portal.disable()
+        self.fake.clipboard_supported = False
+        with self.assertRaisesRegex(PortalError, "Clipboard"):
+            await self.portal.enable(DEFAULT_SHORTCUT)
+        self.assertFalse(self.portal.enabled)
+
+    async def test_hyphenated_property_on_unrelated_portal_does_not_block_enable(self):
+        # Desktop portals can expose hyphenated property names. dbus-next's
+        # typed introspection parser rejects them as invalid member names.
+        self.fake.extra_introspection = (
+            f'<interface name="{PREFIX}PowerProfile">'
+            '<property name="power-saver-enabled" type="b" access="read"/>'
+            '</interface>'
+        )
+        for global_shortcuts in (True, False):
+            with self.subTest(global_shortcuts=global_shortcuts):
+                await self.portal.disable()
+                self.fake.global_shortcuts = global_shortcuts
+                await self.portal.enable(DEFAULT_SHORTCUT)
+                self.assertTrue(self.portal.enabled)
+                self.events.ready_changed.emit.assert_called_with(
+                    True, ANY,
+                )
+                self.assertEqual(self.portal.desktop_shortcut is None, global_shortcuts)
+
         await self.portal.disable()
         self.fake.clipboard_supported = False
         with self.assertRaisesRegex(PortalError, "Clipboard"):
