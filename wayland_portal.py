@@ -3,6 +3,7 @@
 import asyncio
 import os
 import uuid
+import xml.etree.ElementTree as ET
 
 from dbus_next import Message, MessageType, NameFlag, RequestNameReply, Variant
 from dbus_next.aio import MessageBus
@@ -181,8 +182,12 @@ class WaylandPortal:
             if self.enabled:
                 return
             await self.connect()
-            node = await asyncio.wait_for(self.bus.introspect(SERVICE, PATH), 5)
-            interfaces = {interface.name for interface in node.interfaces}
+            # Only interface names are needed: dbus-next's typed introspection
+            # parser rejects hyphenated properties on unrelated portals such
+            # as PowerProfile's power-saver-enabled property.
+            reply = await self.call("org.freedesktop.DBus.Introspectable", "Introspect")
+            node = ET.fromstring(reply.body[0])
+            interfaces = {interface.get("name") for interface in node.findall("interface")}
             if not {PREFIX + "RemoteDesktop", PREFIX + "Clipboard"} <= interfaces:
                 raise PortalError("محیط Wayland دسترسی لازم به صفحه‌کلید و Clipboard را ارائه نمی‌کند.")
             if PREFIX + "GlobalShortcuts" not in interfaces:
