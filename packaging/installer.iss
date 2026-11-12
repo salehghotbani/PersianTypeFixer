@@ -31,12 +31,23 @@ SolidCompression=yes
 WizardStyle=modern
 CloseApplications=yes
 RestartApplications=no
+ShowLanguageDialog=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "persian"; MessagesFile: "languages\Farsi.isl"
+
+[LangOptions]
+persian.LanguageName=فارسی
+
+[CustomMessages]
+english.StartWithSystem=Start when the system starts
+persian.StartWithSystem=اجرا هنگام روشن کردن سیستم
+english.LaunchApplication=Run Persian Typo Fixer
+persian.LaunchApplication=اجرای Persian Typo Fixer
 
 [Tasks]
-Name: "autostart"; Description: "اجرا هنگام روشن کردن سیستم"; Flags: unchecked
+Name: "autostart"; Description: "{cm:StartWithSystem}"; Flags: unchecked
 
 [Files]
 Source: "..\dist\PersianTypoFixer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -51,7 +62,7 @@ Name: "{group}\Persian Typo Fixer"; Filename: "{app}\PersianTypoFixer.exe"; Icon
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PersianTypoFixer"; ValueData: """{app}\PersianTypoFixer.exe"""; Tasks: autostart; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{app}\PersianTypoFixer.exe"; Description: "Run Persian Typo Fixer"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\PersianTypoFixer.exe"; Description: "{cm:LaunchApplication}"; Flags: nowait postinstall skipifsilent
 Filename: "{app}\PersianTypoFixer.exe"; Flags: nowait skipifnotsilent; Check: IsAppUpdate
 
 [Code]
