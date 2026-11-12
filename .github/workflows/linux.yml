@@ -4,12 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_call:
-    inputs:
-      upload_artifacts:
-        type: boolean
-        required: false
-        default: false
   workflow_dispatch:
     inputs:
       upload_artifacts:
