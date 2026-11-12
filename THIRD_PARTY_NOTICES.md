@@ -15,6 +15,9 @@
 | Python Xlib (لینوکس) | 0.33 | LGPL-2.1-or-later؛ مجوز همراه فرادادهٔ بسته در `_internal` قرار دارد |
 | six (لینوکس) | 1.17.0 | MIT؛ مجوز همراه فرادادهٔ بسته در `_internal` قرار دارد |
 | dbus-next (Linux) | 0.2.3 | MIT؛ مجوز همراه فرادادهٔ بسته در `_internal` قرار دارد |
+| Inno Setup و ترجمهٔ فارسی نصاب از Peyman Mohammadi | 6.7.4 | Inno Setup License؛ متن کامل در `licenses/InnoSetup.txt` |
+
+فایل ترجمهٔ فارسی نصاب بدون تغییر از `Files/Languages/Unofficial/Farsi.isl` در [سورس Inno Setup 6.7.4](https://github.com/jrsoftware/issrc/tree/is-6_7_4) دریافت شده است.
 
 متن کامل LGPLv3 و GPLv3 در `licenses/LGPL-3.0.txt` و `licenses/GPL-3.0.txt`
 همراه بسته قرار دارد. مجموعه اعلان‌های upstream مربوط به Qt Base نیز در
