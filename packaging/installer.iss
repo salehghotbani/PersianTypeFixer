@@ -98,8 +98,8 @@ function InitializeUninstall(): Boolean;
 begin
   Result := True;
   while CheckForMutexes('Local\PersianTypoFixer.Singleton') do
-    if SuppressibleMsgBox(FmtMessage(SetupMessage(msgUninstallAppRunningError),
-      ['Persian Typo Fixer']), mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then
+    if SuppressibleMsgBox(FmtMessage(SetupMessage(msgUninstallAppRunningError), ['Persian Typo Fixer']),
+      mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then
     begin
       Result := False;
       Exit;
