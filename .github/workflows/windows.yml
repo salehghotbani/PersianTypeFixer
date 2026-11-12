@@ -4,12 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_call:
-    inputs:
-      upload_artifacts:
-        type: boolean
-        required: false
-        default: false
   workflow_dispatch:
     inputs:
       upload_artifacts:
@@ -51,7 +45,7 @@ jobs:
         shell: cmd
         run: build.bat
       - uses: actions/upload-artifact@v7.0.2
-        if: inputs.upload_artifacts == true
+        if: (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release/')) || inputs.upload_artifacts == true
         with:
           name: PersianTypoFixer-windows-x64
           path: dist/release/*

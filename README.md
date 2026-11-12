@@ -36,7 +36,7 @@
 **Ubuntu و Debian.** دستور زیر را در پوشهٔ فایل دانلودشده اجرا کنید.
 
 ```sh
-sudo apt install ./PersianTypoFixer-v1.6.5-linux-amd64.deb
+sudo apt install ./PersianTypoFixer-v1.6.6-linux-amd64.deb
 ```
 
 فایل‌های دانلودی Python را همراه دارند. [SHA-256 فایل‌ها][checksums] و [همهٔ فایل‌های انتشار][releases] در GitHub در دسترس‌اند.
@@ -44,7 +44,7 @@ sudo apt install ./PersianTypoFixer-v1.6.5-linux-amd64.deb
 **Fedora.** پس از دانلود RPM، در همان پوشه اجرا کنید.
 
 ```sh
-sudo dnf install ./PersianTypoFixer-v1.6.5-linux-x86_64.rpm
+sudo dnf install ./PersianTypoFixer-v1.6.6-linux-x86_64.rpm
 ```
 
 در Linux، **Persian Typo Fixer** را از منوی برنامه‌ها باز کنید. روی Fedora Workstation با GNOME، برای دیدن آیکون System Tray افزونهٔ [AppIndicator][fedora-indicator] را نصب و فعال کنید.
@@ -150,7 +150,7 @@ python main.py
 ```sh
 python -m PyInstaller --noconfirm --clean packaging/linux.spec
 python tools/package_linux.py
-sudo apt install ./dist/release/PersianTypoFixer-v1.6.5-linux-amd64.deb
+sudo apt install ./dist/release/PersianTypoFixer-v1.6.6-linux-amd64.deb
 xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
   python tests/linux_x11_smoke.py /opt/persiantypefixer/PersianTypoFixer
 ```
@@ -159,7 +159,7 @@ xvfb-run -a -s '-screen 0 1280x720x24 -noreset' \
 
 GitHub Actions بستهٔ Windows را می‌سازد، بستهٔ Linux را نصب و در Xvfb آزمایش می‌کند و فایل‌های وب‌سایت را بررسی می‌کند. اگر workflow ساخت را دستی اجرا می‌کنید، گزینهٔ `upload_artifacts` فایل‌ها را در Artifacts همان اجرا قرار می‌دهد.
 
-برای انتشار نسخه، شمارهٔ `app_version.py` و فایل `.github/release-notes/vX.Y.Z.md` را در شاخهٔ `main` آماده کنید و workflow **Publish release** را از بخش Actions روی `main` اجرا کنید. پس از ساخت و آزمون هر دو سیستم‌عامل، فایل‌ها همراه با SHA-256 و توضیحات همان فایل Markdown در GitHub Releases منتشر می‌شوند. انتشار با توکن داخلی GitHub Actions انجام می‌شود؛ پیش‌نویس موجود تکمیل می‌شود و نسخهٔ عمومی قبلی بازنویسی نمی‌شود.
+برای انتشار نسخه، شمارهٔ `app_version.py` و فایل `.github/release-notes/vX.Y.Z.md` را آماده کنید. CI بسته‌ها را می‌سازد و آزمایش می‌کند و خروجی شاخه‌های `release/` را در Actions Artifacts نگه می‌دارد. بسته‌های Windows و Linux همان commit آزمایش‌شده را دریافت کنید، در پوشهٔ مشترک با `python tools/prepare_publish.py PATH` بررسی کنید و سپس فایل‌ها و `SHA256SUMS.txt` را همراه یادداشت نسخه، به‌صورت دستی در GitHub Releases منتشر کنید. tag نسخه باید به commit ادغام‌شده در `main` اشاره کند.
 
 ## مجوز و مشارکت
 
@@ -170,13 +170,13 @@ GitHub Actions بستهٔ Windows را می‌سازد، بستهٔ Linux را �
 [website]: https://persiantypefixer.ghotbani.ir/
 [issues]: https://github.com/salehghotbani/PersianTypeFixer/issues
 [releases]: https://github.com/salehghotbani/PersianTypeFixer/releases/latest
-[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.5/PersianTypoFixer-v1.6.5-windows-x64-setup.exe
-[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.5/PersianTypoFixer-v1.6.5-windows-x64.exe
-[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.5/PersianTypoFixer-v1.6.5-windows-x64-portable.zip
-[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.5/PersianTypoFixer-v1.6.5-linux-amd64.deb
-[fedora]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.5/PersianTypoFixer-v1.6.5-linux-x86_64.rpm
+[windows]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.6/PersianTypoFixer-v1.6.6-windows-x64-setup.exe
+[standalone]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.6/PersianTypoFixer-v1.6.6-windows-x64.exe
+[portable]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.6/PersianTypoFixer-v1.6.6-windows-x64-portable.zip
+[linux]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.6/PersianTypoFixer-v1.6.6-linux-amd64.deb
+[fedora]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.6/PersianTypoFixer-v1.6.6-linux-x86_64.rpm
 [fedora-indicator]: https://packages.fedoraproject.org/pkgs/gnome-shell-extension-appindicator/gnome-shell-extension-appindicator/
-[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.5/SHA256SUMS.txt
+[checksums]: https://github.com/salehghotbani/PersianTypeFixer/releases/download/v1.6.6/SHA256SUMS.txt
 [release-badge]: https://img.shields.io/github/v/release/salehghotbani/PersianTypeFixer?label=Release&color=2454e6
 [windows-badge]: https://img.shields.io/badge/Windows-x64-2563eb
 [linux-badge]: https://img.shields.io/badge/Ubuntu-DEB-16836b?logo=ubuntu&logoColor=white

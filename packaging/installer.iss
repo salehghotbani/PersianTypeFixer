@@ -7,7 +7,6 @@
 AppId={{4CD29712-8CCB-4E55-85E5-1D9295313A97}
 AppName=Persian Typo Fixer
 AppVersion={#AppVersion}
-AppMutex=Local\PersianTypoFixer.Singleton
 AppPublisher={#Publisher}
 AppPublisherURL=https://github.com/salehghotbani/PersianTypeFixer
 AppSupportURL=https://github.com/salehghotbani/PersianTypeFixer/issues
@@ -46,6 +45,10 @@ persian.StartWithSystem=اجرا هنگام روشن کردن سیستم
 english.LaunchApplication=Run Persian Typo Fixer
 persian.LaunchApplication=اجرای Persian Typo Fixer
 
+[Messages]
+english.ApplicationsFound=Persian Typo Fixer is running. Setup will close the applications listed below to update their files, then reopen Persian Typo Fixer when installation finishes.
+persian.ApplicationsFound=برنامه در حال اجراست. نصاب برای به‌روزرسانی فایل‌ها، برنامه‌های فهرست زیر را می‌بندد و پس از پایان نصب، Persian Typo Fixer را دوباره باز می‌کند.
+
 [Tasks]
 Name: "autostart"; Description: "{cm:StartWithSystem}"; Flags: unchecked
 
@@ -62,13 +65,45 @@ Name: "{group}\Persian Typo Fixer"; Filename: "{app}\PersianTypoFixer.exe"; Icon
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PersianTypoFixer"; ValueData: """{app}\PersianTypoFixer.exe"""; Tasks: autostart; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{app}\PersianTypoFixer.exe"; Description: "{cm:LaunchApplication}"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\PersianTypoFixer.exe"; Flags: nowait skipifnotsilent; Check: IsAppUpdate
+Filename: "{app}\PersianTypoFixer.exe"; Description: "{cm:LaunchApplication}"; Flags: nowait postinstall skipifsilent; Check: OfferLaunchApplication
+Filename: "{app}\PersianTypoFixer.exe"; Flags: nowait; Check: ResumeApplication
 
 [Code]
+var
+  AppWasRunning: Boolean;
+
 function IsAppUpdate(): Boolean;
 begin
   Result := ExpandConstant('{param:PTFUPDATE|0}') = '1';
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  AppWasRunning := AppWasRunning or CheckForMutexes('Local\PersianTypoFixer.Singleton');
+  Result := '';
+end;
+
+function OfferLaunchApplication(): Boolean;
+begin
+  Result := not (AppWasRunning or IsAppUpdate());
+end;
+
+function ResumeApplication(): Boolean;
+begin
+  Result := (AppWasRunning or IsAppUpdate()) and
+    not CheckForMutexes('Local\PersianTypoFixer.Singleton');
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  Result := True;
+  while CheckForMutexes('Local\PersianTypoFixer.Singleton') do
+    if SuppressibleMsgBox(FmtMessage(SetupMessage(msgUninstallAppRunningError),
+      ['Persian Typo Fixer']), mbError, MB_OKCANCEL, IDCANCEL) = IDCANCEL then
+    begin
+      Result := False;
+      Exit;
+    end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
